@@ -18,10 +18,6 @@
     "max_traffic_log_hours": 72
   },
   "ai": {
-    "model_path": "models/anomaly_detection.onnx",
-    "anomaly_threshold": 0.85,
-    "feature_window_size": 100,
-    "enable_inference": true,
     "remote_endpoint": "https://open.bigmodel.cn/api/anthropic",
     "remote_api_key": "YOUR_API_KEY_HERE",
     "remote_model": "glm-5.1",

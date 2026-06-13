@@ -52,15 +52,11 @@ namespace sec
     }; // struct store_config
 
     /**
-     * @brief AI 推理配置
-     * @details ONNX 模型路径和异常检测阈值。
+     * @brief AI 配置
+     * @details 远程 API 端点和凭证。本地 ONNX 推理管线已移除（曾为 stub 实现）。
      */
     struct ai_config
     {
-        std::string model_path{"models/anomaly_detection.onnx"};
-        float anomaly_threshold{0.85f};
-        std::uint32_t feature_window_size{100};
-        bool enable_inference{true};
         std::string remote_endpoint;
         std::string remote_api_key;
         std::string remote_model{"gpt-4o"};
@@ -158,10 +154,6 @@ struct glz::meta<sec::ai_config>
 {
     using T = sec::ai_config;
     static constexpr auto value = glz::object(
-        "model_path", &T::model_path,
-        "anomaly_threshold", &T::anomaly_threshold,
-        "feature_window_size", &T::feature_window_size,
-        "enable_inference", &T::enable_inference,
         "remote_endpoint", &T::remote_endpoint,
         "remote_api_key", &T::remote_api_key,
         "remote_model", &T::remote_model,

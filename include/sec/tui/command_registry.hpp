@@ -68,7 +68,6 @@ namespace sec::tui
         void register_scans();
         void register_traffic();
         void register_ai();
-        void register_model();
         void register_api();
 
         application &app_;

@@ -13,7 +13,6 @@
 #include <sec/detector/rule_engine.hpp>
 #include <sec/detector/anomaly.hpp>
 #include <sec/detector/port_scan_detector.hpp>
-#include <sec/ai/model.hpp>
 
 #include <functional>
 #include <vector>
@@ -86,14 +85,6 @@ namespace sec::detector
         }
 
         /**
-         * @brief 获取 AI 模型引用
-         */
-        [[nodiscard]] auto ai_model() noexcept -> ai::anomaly_model &
-        {
-            return ai_model_;
-        }
-
-        /**
          * @brief 获取端口扫描检测器引用
          */
         [[nodiscard]] auto port_scan() noexcept -> port_scan_detector &
@@ -113,7 +104,6 @@ namespace sec::detector
 
         rule_engine rules_;
         anomaly_detector anomaly_;
-        ai::anomaly_model ai_model_;
         port_scan_detector port_scan_;
 
         std::vector<detection_callback> subscribers_;

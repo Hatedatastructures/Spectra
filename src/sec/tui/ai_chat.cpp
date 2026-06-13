@@ -1,4 +1,4 @@
-// AI 对话管理器实现 — 本地 ONNX 推理 + 远程 SSE 流式（OpenAI / Anthropic）
+// AI 对话管理器实现 — 远程 SSE 流式（OpenAI / Anthropic）
 // Windows: 使用 WinINet 实现 HTTPS，避免链接 OpenSSL 触发 Defender
 // POSIX: 使用 OpenSSL
 
@@ -383,13 +383,12 @@ namespace sec::tui
 
 
     ai_chat::ai_chat(const sec::ai_config &ai_cfg)
-        : ai_cfg_{ai_cfg}
-        , system_prompt_{"你是 Spectra 安全分析助手，专门分析局域网安全态势。\n"
+        : system_prompt_{"你是 Spectra 安全分析助手，专门分析局域网安全态势。\n"
                           "请用 Markdown 格式回复，可以使用表格、列表、代码块。\n"
                           "当前监控数据由系统自动注入。"}
-        , local_model_{std::make_unique<sec::ai::anomaly_model>()}
         , remote_ioc_{}
     {
+        (void)ai_cfg;  // 配置字段通过 set_remote() 注入，构造参数保留以维持接口稳定
         remote_work_.emplace(asio::make_work_guard(remote_ioc_.get_executor()));
         remote_thread_ = std::thread{[this]()
         {
@@ -460,17 +459,13 @@ namespace sec::tui
             history_.push_back(std::move(msg));
         }
 
-        if (mode_ == ai_mode::local)
-        {
-            do_local_inference(text, std::move(on_chunk), std::move(on_done));
-        }
-        else if (mode_ == ai_mode::remote)
+        if (mode_ == ai_mode::remote)
         {
             do_remote_request(text, std::move(on_chunk), std::move(on_done));
         }
         else
         {
-            if (on_chunk) on_chunk("AI is **off**. Press `Ctrl+T` to switch mode and use `ai local` or `ai remote`.\n");
+            if (on_chunk) on_chunk("AI is **off**. Press `Ctrl+T` to switch mode and use `ai remote`.\n");
             generating_ = false;
             if (on_done) on_done();
         }
@@ -503,92 +498,9 @@ namespace sec::tui
     }
 
 
-    void ai_chat::observe_packet(const decoder::packet_info &frame)
-    {
-        extractor_.observe(frame);
-        if (local_model_)
-        {
-            local_model_->observe(frame);
-        }
-    }
-
-
     auto ai_chat::is_generating() const noexcept -> bool
     {
         return generating_;
-    }
-
-
-    auto ai_chat::load_local_model() -> bool
-    {
-        if (!local_model_)
-        {
-            local_model_ = std::make_unique<sec::ai::anomaly_model>();
-        }
-        return local_model_->load();
-    }
-
-
-    auto ai_chat::do_local_inference(const std::string &text,
-                                      std::function<void(std::string_view)> on_chunk,
-                                      std::function<void()> on_done) -> void
-    {
-        // 本地推理在工作线程执行，避免阻塞 UI
-        std::thread{[this, text, on_chunk = std::move(on_chunk), on_done = std::move(on_done)]() mutable
-        {
-            auto ss = std::ostringstream{};
-            ss << "## 本地安全分析\n\n";
-
-            try
-            {
-                if (!local_model_ || !local_model_->is_loaded())
-                {
-                    ss << "**本地 ONNX 模型未加载。** 请使用 `model <path>` 加载模型。\n\n";
-                    ss << "你的输入：`" << text << "`\n";
-                }
-                else
-                {
-                    auto ips = extractor_.tracked_ips();
-                    ss << "当前跟踪 **" << ips.size() << "** 个源 IP。\n\n";
-
-                    auto found = 0;
-                    for (auto ip : ips)
-                    {
-                        auto alert_opt = local_model_->detect(ip);
-                        if (alert_opt)
-                        {
-                            ++found;
-                            ss << "- **异常** IP `" << std::hex << ip << "`："
-                               << alert_opt->description << "\n";
-                        }
-                    }
-                    if (found == 0)
-                    {
-                        ss << "**未检测到异常。**\n";
-                    }
-                    else
-                    {
-                        ss << "\n共发现 **" << found << "** 条异常。\n";
-                    }
-                }
-            }
-            catch (const std::exception &e)
-            {
-                ss << "**本地推理异常：** " << e.what() << "\n";
-            }
-
-            {
-                auto lock = std::lock_guard<std::mutex>{history_mutex_};
-                auto msg = chat_message{};
-                msg.who = chat_message::role::assistant;
-                msg.content = ss.str();
-                history_.push_back(std::move(msg));
-            }
-
-            if (on_chunk) on_chunk(ss.str());
-            generating_ = false;
-            if (on_done) on_done();
-        }}.detach();
     }
 
 

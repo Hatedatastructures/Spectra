@@ -42,12 +42,7 @@ namespace sec::tui::components
             auto &th = app_.theme();
             auto mode_color = th.secondary_text;
 
-            if (mode == ai_mode::local)
-            {
-                mode_str = "AI:LOCAL";
-                mode_color = th.success;
-            }
-            else if (mode == ai_mode::remote)
+            if (mode == ai_mode::remote)
             {
                 mode_str = "AI:REMOTE";
                 mode_color = th.info;

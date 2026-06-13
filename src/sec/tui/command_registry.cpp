@@ -114,7 +114,6 @@ namespace sec::tui
         register_scans();
         register_traffic();
         register_ai();
-        register_model();
         register_api();
     }
 
@@ -140,8 +139,7 @@ namespace sec::tui
                 ss << "| `ack` | `ack <id>` | Acknowledge an alert |\n";
                 ss << "| `scans` | `scans` | Show scan history |\n";
                 ss << "| `traffic` | `traffic` | Show recent traffic logs |\n";
-                ss << "| `ai` | `ai [on/off/local/remote]` | AI mode control |\n";
-                ss << "| `model` | `model <path>` | Load local ONNX model |\n";
+                ss << "| `ai` | `ai [on/off/remote]` | AI mode control |\n";
                 ss << "| `api` | `api <endpoint> <key> [model] [proto]` | Configure remote AI (openai/anthropic) |\n";
                 ss << "| `help` | `help` | Show this help |\n\n";
                 ss << "> **Tip:** Press `Ctrl+T` to switch between command and chat mode.\n";
@@ -622,24 +620,18 @@ namespace sec::tui
     void command_registry::register_ai()
     {
         entries_.push_back({
-            "ai", "ai [on/off/local/remote]", "AI mode control",
+            "ai", "ai [on/off/remote]", "AI mode control",
             [this](const std::vector<std::string> &args) -> std::string
             {
                 if (args.size() < 2)
                 {
                     auto mode_str = std::string{"off"};
                     auto m = app_.chat().mode();
-                    if (m == ai_mode::local) mode_str = "local";
-                    else if (m == ai_mode::remote) mode_str = "remote";
-                    return "Current AI mode: **" + mode_str + "**\n\nUsage: `ai [on|off|local|remote]`\n";
+                    if (m == ai_mode::remote) mode_str = "remote";
+                    return "Current AI mode: **" + mode_str + "**\n\nUsage: `ai [on|off|remote]`\n";
                 }
                 auto sub = args[1];
-                if (sub == "on" || sub == "local")
-                {
-                    app_.chat().set_mode(ai_mode::local);
-                    return "AI mode set to **local** (ONNX anomaly detection).\n";
-                }
-                if (sub == "remote")
+                if (sub == "on" || sub == "remote")
                 {
                     app_.chat().set_mode(ai_mode::remote);
                     return "AI mode set to **remote** (OpenAI / Anthropic API).\n";
@@ -649,27 +641,7 @@ namespace sec::tui
                     app_.chat().set_mode(ai_mode::off);
                     return "AI mode set to **off**.\n";
                 }
-                return "**Unknown AI mode:** `" + sub + "`. Use `on`, `off`, `local`, or `remote`.\n";
-            }
-        });
-    }
-
-
-    void command_registry::register_model()
-    {
-        entries_.push_back({
-            "model", "model <path>", "Load local ONNX model",
-            [this](const std::vector<std::string> &args) -> std::string
-            {
-                if (args.size() < 2)
-                {
-                    return "**Usage:** `model <path>` (path to ONNX model file)\n";
-                }
-                if (app_.chat().load_local_model())
-                {
-                    return "Local ONNX model loaded successfully.\n";
-                }
-                return "**Failed to load local ONNX model.** Check the model path and format.\n";
+                return "**Unknown AI mode:** `" + sub + "`. Use `on`, `off`, or `remote`.\n";
             }
         });
     }

@@ -91,16 +91,6 @@ namespace sec::detector
             emit_alert(std::move(anomaly_result.value()));
         }
 
-        // AI 异常模型：更新特征
-        ai_model_.observe(pkt.frame);
-
-        // AI 检测：对源 IP 执行推理
-        auto ai_result = ai_model_.detect(pkt.frame.src_ip);
-        if (ai_result.has_value())
-        {
-            emit_alert(std::move(ai_result.value()));
-        }
-
         // 端口扫描检测
         auto ps_result = port_scan_.check(pkt.frame);
         if (ps_result.has_value())

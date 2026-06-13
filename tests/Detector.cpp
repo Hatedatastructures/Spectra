@@ -6,7 +6,6 @@
 #include <sec/detector/alert.hpp>
 #include <sec/detector/rule_engine.hpp>
 #include <sec/detector/anomaly.hpp>
-#include <sec/ai/feature.hpp>
 
 #include <array>
 #include <cstdint>
@@ -258,127 +257,6 @@ auto TestAnomalyReset() -> int
 }
 
 
-auto TestFeatureExtractor() -> int
-{
-    namespace dec = sec::decoder;
-    using namespace sec::ai;
-
-    feature_extractor ext(60);
-    CHECK(ext.tracked_ips().empty());
-
-    // 喂入数据包
-    std::uint32_t ip1 = 0xC0A80101;
-    std::uint32_t ip2 = 0xC0A80102;
-
-    dec::packet_info frame1;
-    frame1.src_ip = ip1;
-    frame1.dst_ip = ip2;
-    frame1.src_port = 12345;
-    frame1.dst_port = 80;
-    frame1.protocol = 6;
-    frame1.payload = std::span<const std::byte>{};
-
-    ext.observe(frame1);
-
-    dec::packet_info frame2;
-    frame2.src_ip = ip1;
-    frame2.dst_ip = 0xC0A80103;
-    frame2.src_port = 12346;
-    frame2.dst_port = 443;
-    frame2.protocol = 6;
-    frame2.payload = std::span<const std::byte>{};
-
-    ext.observe(frame2);
-
-    auto ips = ext.tracked_ips();
-    CHECK(ips.size() == 1);
-    CHECK(ips[0] == ip1);
-
-    auto feat = ext.extract(ip1);
-    // 检查特征向量维度
-    CHECK(feat.size() == feature_dim);
-
-    // 2 个包
-    CHECK(feat[static_cast<std::size_t>(feature_index::total_packets)] == 2.0);
-    // TCP 占比 = 1.0
-    CHECK(feat[static_cast<std::size_t>(feature_index::tcp_ratio)] == 1.0);
-    // UDP 占比 = 0.0
-    CHECK(feat[static_cast<std::size_t>(feature_index::udp_ratio)] == 0.0);
-    // 唯一目标 IP 数 = 2
-    CHECK(feat[static_cast<std::size_t>(feature_index::unique_destinations)] == 2.0);
-    // 唯一目标端口数 = 2
-    CHECK(feat[static_cast<std::size_t>(feature_index::unique_ports)] == 2.0);
-
-    // 不存在的 IP 返回零向量
-    auto feat_empty = ext.extract(0xFFFFFFFF);
-    for (std::size_t i = 0; i < feature_dim; ++i)
-    {
-        CHECK(feat_empty[i] == 0.0);
-    }
-
-    std::cout << "  PASS: FeatureExtractor\n";
-    return 0;
-}
-
-
-auto TestFeatureExtractorRemove() -> int
-{
-    namespace dec = sec::decoder;
-    using namespace sec::ai;
-
-    feature_extractor ext;
-
-    dec::packet_info frame;
-    frame.src_ip = 0x01020304;
-    frame.dst_ip = 0x05060708;
-    frame.src_port = 1234;
-    frame.dst_port = 80;
-    frame.protocol = 6;
-    frame.payload = {};
-
-    ext.observe(frame);
-    CHECK(ext.tracked_ips().size() == 1);
-
-    ext.remove(0x01020304);
-    CHECK(ext.tracked_ips().empty());
-
-    // 清除所有
-    ext.observe(frame);
-    ext.reset();
-    CHECK(ext.tracked_ips().empty());
-
-    std::cout << "  PASS: FeatureExtractorRemove\n";
-    return 0;
-}
-
-
-auto TestFeatureExtractorUdp() -> int
-{
-    namespace dec = sec::decoder;
-    using namespace sec::ai;
-
-    feature_extractor ext;
-
-    dec::packet_info frame;
-    frame.src_ip = 0xC0A80101;
-    frame.dst_ip = 0xC0A80102;
-    frame.src_port = 54321;
-    frame.dst_port = 53;
-    frame.protocol = 17; // UDP
-    frame.payload = {};
-
-    ext.observe(frame);
-
-    auto feat = ext.extract(0xC0A80101);
-    CHECK(feat[static_cast<std::size_t>(feature_index::tcp_ratio)] == 0.0);
-    CHECK(feat[static_cast<std::size_t>(feature_index::udp_ratio)] == 1.0);
-    CHECK(feat[static_cast<std::size_t>(feature_index::total_packets)] == 1.0);
-
-    std::cout << "  PASS: FeatureExtractorUdp\n";
-    return 0;
-}
-
-
 // --- main ---
 
 auto main() -> int
@@ -394,9 +272,6 @@ auto main() -> int
     rc |= TestRuleEngineCaseInsensitive();
     rc |= TestAnomalyBasic();
     rc |= TestAnomalyReset();
-    rc |= TestFeatureExtractor();
-    rc |= TestFeatureExtractorRemove();
-    rc |= TestFeatureExtractorUdp();
 
     if (rc == 0)
     {

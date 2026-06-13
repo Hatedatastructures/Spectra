@@ -1,13 +1,10 @@
 /**
  * @file ai_chat.hpp
- * @brief AI 对话管理器（本地 ONNX + 远程 SSE 双模式）
+ * @brief AI 对话管理器（远程 SSE 流式，支持 OpenAI / Anthropic 协议）
  */
 #pragma once
 
 #include <sec/config.hpp>
-#include <sec/ai/feature.hpp>
-#include <sec/ai/model.hpp>
-#include <sec/decoder/frame.hpp>
 #include <boost/asio.hpp>
 
 #include <atomic>
@@ -29,8 +26,6 @@ namespace sec::tui
     {
         /** @brief 禁用 */
         off,
-        /** @brief 本地 ONNX 推理 */
-        local,
         /** @brief 远程 API 流式 */
         remote
     };
@@ -73,7 +68,7 @@ namespace sec::tui
 
     /**
      * @brief AI 对话管理器
-     * @details 双模式：本地 ONNX 异常检测 + 远程 API 流式（OpenAI / Anthropic）。
+     * @details 远程 API 流式（OpenAI / Anthropic）。
      */
     class ai_chat
     {
@@ -88,7 +83,7 @@ namespace sec::tui
         /**
          * @brief 发送消息并获取回复
          * @param text 用户输入
-         * @param on_chunk 流式回调（远程多次调用，本地一次整段）
+         * @param on_chunk 流式回调（多次调用）
          * @param on_done 完成回调
          */
         auto send(const std::string &text,
@@ -99,26 +94,17 @@ namespace sec::tui
         [[nodiscard]] auto history() const -> const std::vector<chat_message> &;
         void clear_history();
         void set_system_prompt(std::string prompt);
-        void observe_packet(const decoder::packet_info &frame);
         [[nodiscard]] auto is_generating() const noexcept -> bool;
-        [[nodiscard]] auto load_local_model() -> bool;
 
     private:
-        void do_local_inference(const std::string &text,
-                                 std::function<void(std::string_view)> on_chunk,
-                                 std::function<void()> on_done);
         void do_remote_request(const std::string &text,
                                 std::function<void(std::string_view)> on_chunk,
                                 std::function<void()> on_done);
 
-        sec::ai_config ai_cfg_;
         remote_config remote_cfg_;
         ai_mode mode_{ai_mode::off};
         std::string system_prompt_;
         std::vector<chat_message> history_;
-
-        std::unique_ptr<sec::ai::anomaly_model> local_model_;
-        sec::ai::feature_extractor extractor_;
 
         boost::asio::io_context remote_ioc_;
         std::optional<boost::asio::executor_work_guard<
