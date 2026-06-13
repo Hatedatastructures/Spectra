@@ -1,6 +1,7 @@
 // SOCKS5 协议解码器实现
 
 #include <sec/decoder/socks5.hpp>
+#include <sec/decoder/util.hpp>
 
 
 namespace sec::decoder
@@ -9,17 +10,8 @@ namespace sec::decoder
     namespace
     {
 
-        auto read_u8(const std::byte *p) noexcept -> std::uint8_t
-        {
-            return static_cast<std::uint8_t>(*p);
-        }
-
-
-        auto read_u16_be(const std::byte *p) noexcept -> std::uint16_t
-        {
-            return (static_cast<std::uint16_t>(p[0]) << 8) |
-                   (static_cast<std::uint16_t>(p[1]));
-        }
+        using sec::decoder::read_u8;
+        using sec::decoder::read_u16_be;
 
     } // anonymous namespace
 

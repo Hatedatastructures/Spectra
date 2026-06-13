@@ -1,6 +1,7 @@
 // DNS 协议解码器实现
 
 #include <sec/decoder/dns.hpp>
+#include <sec/decoder/util.hpp>
 
 #include <cstring>
 
@@ -11,20 +12,8 @@ namespace sec::decoder
     namespace
     {
 
-        auto read_u16_be(const std::byte *p) noexcept -> std::uint16_t
-        {
-            return (static_cast<std::uint16_t>(p[0]) << 8) |
-                   (static_cast<std::uint16_t>(p[1]));
-        }
-
-
-        auto read_u32_be(const std::byte *p) noexcept -> std::uint32_t
-        {
-            return (static_cast<std::uint32_t>(p[0]) << 24) |
-                   (static_cast<std::uint32_t>(p[1]) << 16) |
-                   (static_cast<std::uint32_t>(p[2]) << 8) |
-                   (static_cast<std::uint32_t>(p[3]));
-        }
+        using sec::decoder::read_u16_be;
+        using sec::decoder::read_u32_be;
 
 
         // 解析 DNS 名称，处理标签指针压缩

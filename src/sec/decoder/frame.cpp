@@ -32,22 +32,6 @@ namespace sec::decoder
         constexpr std::uint8_t proto_tcp{6};
         constexpr std::uint8_t proto_udp{17};
 
-
-        auto read_u16_be(const std::byte *p) noexcept -> std::uint16_t
-        {
-            return (static_cast<std::uint16_t>(p[0]) << 8) |
-                   (static_cast<std::uint16_t>(p[1]));
-        }
-
-
-        auto read_u32_be(const std::byte *p) noexcept -> std::uint32_t
-        {
-            return (static_cast<std::uint32_t>(p[0]) << 24) |
-                   (static_cast<std::uint32_t>(p[1]) << 16) |
-                   (static_cast<std::uint32_t>(p[2]) << 8) |
-                   (static_cast<std::uint32_t>(p[3]));
-        }
-
         // ARP payload 最小长度：HTYPE(2)+PTYPE(2)+HLEN(1)+PLEN(1)+OPER(2)+SHA(6)+SPA(4)+THA(6)+TPA(4) = 28
         constexpr std::size_t arp_min_payload_len{28};
 
@@ -221,15 +205,6 @@ namespace sec::decoder
                 std::chrono::steady_clock::now().time_since_epoch());
         }
         return result;
-    }
-
-
-    [[nodiscard]] auto ip_to_string(std::uint32_t ip) -> std::string
-    {
-        return std::to_string((ip >> 24) & 0xFF) + "." +
-               std::to_string((ip >> 16) & 0xFF) + "." +
-               std::to_string((ip >> 8) & 0xFF) + "." +
-               std::to_string(ip & 0xFF);
     }
 
 

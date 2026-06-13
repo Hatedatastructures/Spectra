@@ -3,6 +3,7 @@
 #include <sec/cli/application.hpp>
 #include <sec/scanner/fingerprint.hpp>
 #include <sec/transport/pcap.hpp>
+#include <sec/decoder/util.hpp>
 #include <sec/detector/alert.hpp>
 #include <sec/util/format.hpp>
 #include <sec/util/string.hpp>
@@ -991,12 +992,10 @@ namespace sec::cli
             return result;
         }
 
-        auto ipv4_to_string(std::uint32_t ip) -> std::string
+        // ip/mac 格式化由 sec::decoder::ip_to_string / mac_to_string 提供
+        inline auto ipv4_to_string(std::uint32_t ip) -> std::string
         {
-            return std::to_string((ip >> 24) & 0xFF) + "." +
-                   std::to_string((ip >> 16) & 0xFF) + "." +
-                   std::to_string((ip >> 8) & 0xFF) + "." +
-                   std::to_string(ip & 0xFF);
+            return sec::decoder::ip_to_string(ip);
         }
 
         // 通过 GetAdaptersAddresses 查找匹配 IP 的接口 MAC
@@ -1196,17 +1195,9 @@ namespace sec::cli
             return false;
         }
 
-        auto mac_to_string(std::span<const std::byte, 6> mac) -> std::string
+        inline auto mac_to_string(std::span<const std::byte, 6> mac) -> std::string
         {
-            char buf[18]{};
-            std::snprintf(buf, sizeof(buf), "%02X:%02X:%02X:%02X:%02X:%02X",
-                          static_cast<unsigned>(mac[0]),
-                          static_cast<unsigned>(mac[1]),
-                          static_cast<unsigned>(mac[2]),
-                          static_cast<unsigned>(mac[3]),
-                          static_cast<unsigned>(mac[4]),
-                          static_cast<unsigned>(mac[5]));
-            return buf;
+            return sec::decoder::mac_to_string(mac);
         }
 
         void print_pentest_summary(const std::vector<pentest_result> &results,

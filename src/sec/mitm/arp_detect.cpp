@@ -3,8 +3,8 @@
 #include <sec/mitm/arp_detect.hpp>
 
 #include <sec/decoder/frame.hpp>
+#include <sec/decoder/util.hpp>
 
-#include <cstdio>
 #include <chrono>
 
 
@@ -14,18 +14,7 @@ namespace sec::mitm
     namespace
     {
 
-        auto mac_to_string(const std::byte *data) -> std::string
-        {
-            char buf[18];
-            std::snprintf(buf, sizeof(buf), "%02X:%02X:%02X:%02X:%02X:%02X",
-                static_cast<unsigned>(data[0]),
-                static_cast<unsigned>(data[1]),
-                static_cast<unsigned>(data[2]),
-                static_cast<unsigned>(data[3]),
-                static_cast<unsigned>(data[4]),
-                static_cast<unsigned>(data[5]));
-            return buf;
-        }
+        using sec::decoder::mac_to_string;
 
         auto mac_equal(const std::byte *a, const std::byte *b) -> bool
         {

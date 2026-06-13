@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <sec/decoder/util.hpp>
+
 #include <array>
 #include <chrono>
 #include <cstdint>
@@ -86,12 +88,6 @@ namespace sec::decoder
             -> std::optional<packet_info>;
     };
 
-
-    /**
-     * @brief 将主机字节序 IPv4 地址转为点分十进制字符串
-     * @param ip 主机字节序 IPv4 地址
-     * @return 点分十进制字符串，如 "192.168.1.1"
-     */
-    [[nodiscard]] auto ip_to_string(std::uint32_t ip) -> std::string;
+    // ip_to_string / mac_to_string / read_u{8,16,32}_be 由 <sec/decoder/util.hpp> 提供
 
 } // namespace sec::decoder
