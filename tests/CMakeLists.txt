@@ -14,7 +14,6 @@ function(spectra_add_test test_name source_file)
 endfunction()
 
 spectra_add_test(Fault         Fault.cpp)
-spectra_add_test(Exception     Exception.cpp)
 spectra_add_test(Memory        Memory.cpp)
 spectra_add_test(Scanner       Scanner.cpp)
 spectra_add_test(Decoder       Decoder.cpp)

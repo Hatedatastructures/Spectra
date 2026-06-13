@@ -7,11 +7,6 @@ target_sources(${PROJECT_NAME}_static_library
         ${PROJECT_SOURCE_DIR}/include/sec/fault/code.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/fault/compatible.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/fault/handling.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/exception.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/exception/deviant.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/exception/network.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/exception/protocol.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/exception/security.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/memory.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/memory/container.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/memory/pool.hpp
