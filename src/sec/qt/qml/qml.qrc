@@ -1,7 +1,0 @@
-<RCC>
-    <qresource prefix="/qml">
-        <file>Main.qml</file>
-        <file>TrafficView.qml</file>
-        <file>AlertTimeline.qml</file>
-    </qresource>
-</RCC>

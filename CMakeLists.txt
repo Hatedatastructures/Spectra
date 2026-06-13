@@ -10,10 +10,6 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Qt AUTOMOC/AUTORCC 必须在 add_subdirectory 之前全局开启
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-
 # 全局编译选项：允许成员变量名与类型名相同（Linux GCC 严格要求）
 add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:-Wno-error=changes-meaning>)
 
@@ -116,15 +112,6 @@ target_compile_definitions(sqlite3_static PRIVATE
 )
 find_package(Threads REQUIRED)
 target_link_libraries(sqlite3_static PUBLIC Threads::Threads)
-
-# --- Qt 6 ---
-# GUI 框架，使用 Quick/QML 声明式界面。
-# 通过 aqtinstall 自动安装到 C:/Qt/6.8.3/mingw_64。
-# 暂时禁用 Qt — 仅使用 CLI + TUI，避免 Qt6::Quick 拉入 4GB+ 内存
-# if(WIN32)
-#     list(APPEND CMAKE_PREFIX_PATH "C:/Qt/6.8.3/mingw_64")
-# endif()
-# find_package(Qt6 COMPONENTS Core Gui Quick)
 
 # === TUI 依赖：cpp-terminal + cmark-gfm ===
 # 下载阶段使用 7890 代理，下载完成后恢复
