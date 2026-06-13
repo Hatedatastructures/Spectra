@@ -1,6 +1,7 @@
 // SMTP 协议解码器实现
 
 #include <sec/decoder/smtp.hpp>
+#include <sec/decoder/util.hpp>
 
 #include <algorithm>
 #include <cctype>
@@ -12,10 +13,7 @@ namespace sec::decoder
     namespace
     {
 
-        auto to_string_view(std::span<const std::byte> data) noexcept -> std::string_view
-        {
-            return {reinterpret_cast<const char *>(data.data()), data.size()};
-        }
+        using sec::decoder::to_string_view;
 
 
         bool is_smtp_command(std::string_view token) noexcept

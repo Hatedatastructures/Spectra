@@ -9,7 +9,6 @@
 
 #include <boost/system/error_code.hpp>
 
-#include <cstdlib>
 #include <iostream>
 #include <string_view>
 

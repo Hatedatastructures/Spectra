@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <span>
 #include <string>
+#include <string_view>
 
 namespace sec::decoder
 {
@@ -82,6 +83,15 @@ namespace sec::decoder
                (static_cast<std::uint32_t>(p[1]) << 16) |
                (static_cast<std::uint32_t>(p[2]) << 8) |
                (static_cast<std::uint32_t>(p[3]));
+    }
+
+
+    /**
+     * @brief 将字节 span 安全转换为 string_view（用于文本协议解码）
+     */
+    [[nodiscard]] inline auto to_string_view(std::span<const std::byte> data) noexcept -> std::string_view
+    {
+        return {reinterpret_cast<const char *>(data.data()), data.size()};
     }
 
 } // namespace sec::decoder

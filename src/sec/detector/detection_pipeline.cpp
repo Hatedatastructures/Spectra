@@ -4,7 +4,6 @@
 
 #include <sec/decoder/frame.hpp>
 
-#include <algorithm>
 
 
 namespace sec::detector

@@ -114,11 +114,15 @@ find_package(Threads REQUIRED)
 target_link_libraries(sqlite3_static PUBLIC Threads::Threads)
 
 # === TUI 依赖：cpp-terminal + cmark-gfm ===
-# 下载阶段使用 7890 代理，下载完成后恢复
-set(_saved_http_proxy "$ENV{http_proxy}")
-set(_saved_https_proxy "$ENV{https_proxy}")
-set(ENV{http_proxy} "http://127.0.0.1:7890")
-set(ENV{https_proxy} "http://127.0.0.1:7890")
+# 可选代理：仅当用户在环境变量中设置 SPECTRA_PROXY 时启用
+# (例如 `set SPECTRA_PROXY=http://127.0.0.1:7890 && cmake -B build`)
+# 不再硬编码开发者本地代理，避免他人构建失败
+if(DEFINED ENV{SPECTRA_PROXY})
+    set(_saved_http_proxy "$ENV{http_proxy}")
+    set(_saved_https_proxy "$ENV{https_proxy}")
+    set(ENV{http_proxy} "$ENV{SPECTRA_PROXY}")
+    set(ENV{https_proxy} "$ENV{SPECTRA_PROXY}")
+endif()
 
 # --- cpp-terminal ---
 # 轻量 C++ 终端库，替代 FTXUI。提供 Term::Window cell buffer、事件处理、TrueColor。
@@ -166,8 +170,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(cmark_gfm)
 unset(CMAKE_POLICY_VERSION_MINIMUM CACHE)
 
-set(ENV{http_proxy} "${_saved_http_proxy}")
-set(ENV{https_proxy} "${_saved_https_proxy}")
+if(DEFINED ENV{SPECTRA_PROXY})
+    set(ENV{http_proxy} "${_saved_http_proxy}")
+    set(ENV{https_proxy} "${_saved_https_proxy}")
+endif()
 
 enable_testing()
 

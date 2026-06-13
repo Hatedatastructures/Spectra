@@ -24,6 +24,12 @@ auto main(int argc, char *argv[]) -> int
         logger->flush_on(spdlog::level::debug);
         spdlog::set_default_logger(logger);
     }
+    catch (const std::exception &e)
+    {
+        // spdlog 初始化失败时无法用 spdlog::warn，必须用 std::cerr
+        std::cerr << "Warning: spdlog initialization failed (" << e.what()
+                  << "), continuing without file logging.\n";
+    }
     catch (...) {}
 
     // 入口判定：

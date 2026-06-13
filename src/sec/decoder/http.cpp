@@ -1,6 +1,7 @@
 // HTTP 协议解码器实现
 
 #include <sec/decoder/http.hpp>
+#include <sec/decoder/util.hpp>
 
 #include <algorithm>
 #include <cctype>
@@ -13,10 +14,7 @@ namespace sec::decoder
     namespace
     {
 
-        auto to_string_view(std::span<const std::byte> data) noexcept -> std::string_view
-        {
-            return {reinterpret_cast<const char *>(data.data()), data.size()};
-        }
+        using sec::decoder::to_string_view;
 
 
         auto find_crlf(std::string_view sv, std::size_t offset = 0) noexcept -> std::size_t

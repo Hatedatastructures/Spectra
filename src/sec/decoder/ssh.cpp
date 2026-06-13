@@ -57,7 +57,6 @@ namespace sec::decoder
         info.software_version = std::string(ident_line.substr(dash1 + 1, sv_end - dash1 - 1));
 
         // 通过常见的服务端标识判断
-        auto lower = info.software_version;
         // 服务端常见：OpenSSH, dropbear 等（通常以大写开头）
         info.is_server = (ident_line.find("OpenSSH") != std::string_view::npos);
 
