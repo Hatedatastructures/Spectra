@@ -1,0 +1,22 @@
+function(spectra_add_test test_name source_file)
+    add_executable(${test_name} ${CMAKE_CURRENT_SOURCE_DIR}/${source_file})
+    target_compile_options(${test_name} PRIVATE -g1 -Os)
+    target_link_libraries(${test_name} PRIVATE ${PROJECT_NAME}_static_library)
+    if(MINGW)
+        target_link_options(${test_name} PRIVATE -static-libgcc)
+    endif()
+    add_test(NAME ${test_name} COMMAND ${test_name})
+    if(MINGW)
+        set_tests_properties(${test_name} PROPERTIES
+            ENVIRONMENT "PATH=C:\\msys64\\mingw64\\bin;C:\\Windows\\System32;C:\\Windows"
+        )
+    endif()
+endfunction()
+
+spectra_add_test(Fault         Fault.cpp)
+spectra_add_test(Exception     Exception.cpp)
+spectra_add_test(Memory        Memory.cpp)
+spectra_add_test(Scanner       Scanner.cpp)
+spectra_add_test(Decoder       Decoder.cpp)
+spectra_add_test(Mitm          Mitm.cpp)
+spectra_add_test(Detector      Detector.cpp)

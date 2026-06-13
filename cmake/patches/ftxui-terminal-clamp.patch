@@ -1,0 +1,23 @@
+diff --git a/src/ftxui/screen/terminal.cpp b/src/ftxui/screen/terminal.cpp
+index 8878a1f9..1e6088b6 100644
+--- a/src/ftxui/screen/terminal.cpp
++++ b/src/ftxui/screen/terminal.cpp
+@@ -101,9 +101,16 @@ Dimensions Size() {
+ #elif defined(_WIN32)
+   CONSOLE_SCREEN_BUFFER_INFO csbi;
+ 
++  // Clamp srWindow to prevent OOM from oversized console buffer.
++  constexpr int max_terminal_rows = 120;
++  constexpr int max_terminal_cols = 512;
++
+   if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+-    return Dimensions{csbi.srWindow.Right - csbi.srWindow.Left + 1,
+-                      csbi.srWindow.Bottom - csbi.srWindow.Top + 1};
++    int dimx = csbi.srWindow.Right - csbi.srWindow.Left + 1;
++    int dimy = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
++    if (dimx > max_terminal_cols) dimx = max_terminal_cols;
++    if (dimy > max_terminal_rows) dimy = max_terminal_rows;
++    return Dimensions{dimx, dimy};
+   }
+ 
+   return FallbackSize();

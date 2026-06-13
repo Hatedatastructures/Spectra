@@ -1,0 +1,87 @@
+# === 构建产物 ===
+build/
+build_*/
+out/
+Debug/
+Release/
+
+# === CMake 缓存 ===
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake.user
+compile_commands.json
+
+# === IDE / 编辑器 ===
+.vs/
+.vscode/
+.idea/
+.cache/
+*.user
+*.suo
+*.sln.docstates
+*.swp
+*~
+
+# === Claude Code 本地配置（个人开发工作流）===
+.claude/
+
+# === 运行时数据（含敏感信息）===
+spectra.json
+spectra.db
+spectra.db-shm
+spectra.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# === 日志 ===
+*.log
+spectra.log
+tui_debug.log
+spdlog.log
+
+# === 调试输出文件 ===
+*.txt
+!CMakeLists.txt
+!README.txt
+!LICENSE.txt
+spectra_stderr.txt
+spectra_stdout.txt
+stderr.txt
+stdout.txt
+err.txt
+out.txt
+exc_out.txt
+exception_err.txt
+exception_out.txt
+live_stderr.txt
+live_stdout.txt
+
+# === 临时扫描/测试结果 ===
+arp_result.txt
+ping_result.txt
+port_spectra.txt
+portscan_result.txt
+*_result.txt
+
+# === 临时脚本 ===
+run_*.bat
+run_*.ps1
+ping_all.bat
+portscan.bat
+portscan.ps1
+
+# === 安装/补丁日志 ===
+aqtinstall.log
+
+# === 操作系统 ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === 依赖 ===
+deps/
+vendor/
+conan/

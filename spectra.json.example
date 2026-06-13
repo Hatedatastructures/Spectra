@@ -1,0 +1,38 @@
+{
+  "engine": {
+    "capture_interface": "eth0",
+    "capture_buffer_size": 4096,
+    "promiscuous_mode": true,
+    "snapshot_length": 65535
+  },
+  "scanner": {
+    "arp_timeout_ms": 1000,
+    "port_timeout_ms": 500,
+    "port_concurrency": 128,
+    "enable_mdns": true,
+    "enable_ssdp": true
+  },
+  "store": {
+    "database_path": "spectra.db",
+    "wal_checkpoint_interval": 1000,
+    "max_traffic_log_hours": 72
+  },
+  "ai": {
+    "model_path": "models/anomaly_detection.onnx",
+    "anomaly_threshold": 0.85,
+    "feature_window_size": 100,
+    "enable_inference": true,
+    "remote_endpoint": "https://open.bigmodel.cn/api/anthropic",
+    "remote_api_key": "YOUR_API_KEY_HERE",
+    "remote_model": "glm-5.1",
+    "remote_protocol": "anthropic"
+  },
+  "trace": {
+    "log_level": "info",
+    "log_path": "logs/",
+    "console_output": true
+  },
+  "tui": {
+    "theme": "auto"
+  }
+}

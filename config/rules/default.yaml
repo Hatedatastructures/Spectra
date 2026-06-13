@@ -1,0 +1,122 @@
+# Spectra 默认检测规则集
+# 类 Snort 风格，启动时自动加载
+
+rules:
+  # ARP 检测规则
+  - id: arp_spoof_classic
+    protocol: ip
+    source:
+      any: true
+    destination:
+      any: true
+    message: "ARP spoofing: IP-MAC binding conflict detected"
+    level: high
+    type: arp_spoofing
+    threshold_count: 3
+    threshold_seconds: 10
+
+  - id: arp_flood
+    protocol: ip
+    source:
+      any: true
+    destination:
+      any: true
+    message: "ARP flood: excessive ARP packets detected"
+    level: medium
+    type: arp_spoofing
+    threshold_count: 50
+    threshold_seconds: 1
+
+  # 端口扫描规则
+  - id: port_scan_tcp
+    protocol: tcp
+    source:
+      any: true
+    destination:
+      any: true
+    message: "TCP port scan detected"
+    level: medium
+    type: port_scan
+    threshold_count: 10
+    threshold_seconds: 5
+
+  - id: port_scan_udp
+    protocol: udp
+    source:
+      any: true
+    destination:
+      any: true
+    message: "UDP port scan detected"
+    level: medium
+    type: port_scan
+    threshold_count: 10
+    threshold_seconds: 5
+
+  # DNS 检测规则
+  - id: dns_suspicious_query
+    protocol: udp
+    source:
+      any: true
+    destination:
+      any: true
+      port: 53
+    message: "Suspicious DNS query pattern"
+    level: low
+    type: dns_hijack
+    threshold_count: 0
+    threshold_seconds: 0
+
+  # TLS 检测规则
+  - id: tls_downgrade
+    protocol: tcp
+    source:
+      any: true
+    destination:
+      any: true
+      port: 443
+    message: "TLS version downgrade detected"
+    level: high
+    type: tls_stripping
+    threshold_count: 0
+    threshold_seconds: 0
+
+  # 暴力破解规则
+  - id: brute_force_ssh
+    protocol: tcp
+    source:
+      any: true
+    destination:
+      any: true
+      port: 22
+    message: "Possible SSH brute force attempt"
+    level: high
+    type: brute_force
+    threshold_count: 5
+    threshold_seconds: 60
+
+  - id: brute_force_http
+    protocol: tcp
+    source:
+      any: true
+    destination:
+      any: true
+      port: 80
+    message: "Possible HTTP brute force attempt"
+    level: medium
+    type: brute_force
+    threshold_count: 10
+    threshold_seconds: 60
+
+  # 数据外泄规则
+  - id: data_exfil_dns
+    protocol: udp
+    source:
+      any: true
+    destination:
+      any: true
+      port: 53
+    message: "Possible DNS data exfiltration (long domain)"
+    level: high
+    type: data_exfiltration
+    threshold_count: 0
+    threshold_seconds: 0
