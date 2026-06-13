@@ -102,28 +102,6 @@ namespace sec::store
     }
 
 
-    // 更新指定 IP 设备的最后出现时间
-    [[nodiscard]] auto device_query::update_last_seen(std::string_view ip, std::int64_t timestamp, std::error_code &ec) noexcept -> bool
-    {
-        auto stmt = db_.prepare(
-            "UPDATE devices SET last_seen = ? WHERE ip_address = ?",
-            ec);
-        if (!stmt.is_valid()) return false;
-
-        if (!stmt.bind(1, timestamp)) return false;
-        if (!stmt.bind(2, ip)) return false;
-
-        if (stmt.step() != SQLITE_DONE)
-        {
-            ec = fault::make_error_code(fault::code::db_query_failed);
-            return false;
-        }
-
-        ec.clear();
-        return true;
-    }
-
-
     // 统计设备总数
     [[nodiscard]] auto device_query::count(std::error_code &ec) noexcept -> std::int64_t
     {
@@ -292,51 +270,6 @@ namespace sec::store
     }
 
 
-    // 批量插入流量日志记录（事务保护，任一条失败则全部回滚）
-    [[nodiscard]] auto traffic_query::insert_batch(const std::vector<traffic_log> &logs, std::error_code &ec) noexcept -> bool
-    {
-        transaction_guard txn{db_};
-
-        auto stmt = db_.prepare(
-            "INSERT INTO traffic_logs "
-            "(src_ip, dst_ip, src_port, dst_port, protocol, "
-            "timestamp, packet_size, info) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            ec);
-        if (!stmt.is_valid()) return false;
-
-        for (const auto &log : logs)
-        {
-            if (!stmt.bind(1, log.src_ip)) return false;
-            if (!stmt.bind(2, log.dst_ip)) return false;
-            if (!stmt.bind(3, log.src_port)) return false;
-            if (!stmt.bind(4, log.dst_port)) return false;
-            if (!stmt.bind(5, log.protocol)) return false;
-            if (!stmt.bind(6, log.timestamp)) return false;
-            if (!stmt.bind(7, log.packet_size)) return false;
-            if (!stmt.bind(8, log.info)) return false;
-
-            if (stmt.step() != SQLITE_DONE)
-            {
-                ec = fault::make_error_code(fault::code::db_query_failed);
-                return false;
-            }
-
-            stmt.reset();
-            stmt.clear_bindings();
-        }
-
-        if (!txn.commit())
-        {
-            ec = fault::make_error_code(fault::code::db_query_failed);
-            return false;
-        }
-
-        ec.clear();
-        return true;
-    }
-
-
     // 按时间范围查询流量日志
     [[nodiscard]] auto traffic_query::find_by_time_range(std::int64_t from_ts, std::int64_t to_ts, std::error_code &ec) noexcept -> std::vector<traffic_log>
     {
@@ -430,29 +363,6 @@ namespace sec::store
             "FROM alerts WHERE acknowledged = 0 ORDER BY timestamp DESC",
             ec);
         if (!stmt.is_valid()) return {};
-
-        auto results = std::vector<alert_record>{};
-        while (stmt.step() == SQLITE_ROW)
-        {
-            results.push_back(read_alert(stmt));
-        }
-
-        ec.clear();
-        return results;
-    }
-
-
-    // 按严重等级查询告警记录
-    [[nodiscard]] auto alert_query::find_by_severity(std::string_view severity, std::error_code &ec) noexcept -> std::vector<alert_record>
-    {
-        auto stmt = db_.prepare(
-            "SELECT id, category, severity, source_ip, target_ip, "
-            "description, timestamp, acknowledged "
-            "FROM alerts WHERE severity = ? ORDER BY timestamp DESC",
-            ec);
-        if (!stmt.is_valid()) return {};
-
-        if (!stmt.bind(1, severity)) return {};
 
         auto results = std::vector<alert_record>{};
         while (stmt.step() == SQLITE_ROW)

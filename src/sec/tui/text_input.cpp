@@ -91,32 +91,6 @@ namespace sec::tui
         return byte_pos - p;
     }
 
-    static auto utf8_display_width(const std::string &s) -> int
-    {
-        auto width = 0;
-        auto i = std::size_t{0};
-        while (i < s.size())
-        {
-            auto byte = static_cast<unsigned char>(s[i]);
-            auto len = 1;
-            if (byte <= 0x7F) len = 1;
-            else if ((byte & 0xE0) == 0xC0) len = 2;
-            else if ((byte & 0xF0) == 0xE0) len = 3;
-            else if ((byte & 0xF8) == 0xF0) len = 4;
-
-            auto cp = char32_t{0};
-            if (len == 1) cp = byte;
-            else if (len == 2) cp = ((byte & 0x1F) << 6) | (static_cast<unsigned char>(s[i + 1]) & 0x3F);
-            else if (len == 3) cp = ((byte & 0x0F) << 12) | ((static_cast<unsigned char>(s[i + 1]) & 0x3F) << 6) | (static_cast<unsigned char>(s[i + 2]) & 0x3F);
-            else cp = ((byte & 0x07) << 18) | ((static_cast<unsigned char>(s[i + 1]) & 0x3F) << 12) | ((static_cast<unsigned char>(s[i + 2]) & 0x3F) << 6) | (static_cast<unsigned char>(s[i + 3]) & 0x3F);
-
-            // CJK 等宽字符占 2 列
-            width += (cp >= 0x1100 && (cp <= 0x115F || (cp >= 0x2E80 && cp <= 0xA4CF && cp != 0x303F) || (cp >= 0xAC00 && cp <= 0xD7A3) || (cp >= 0xF900 && cp <= 0xFAFF) || (cp >= 0xFE10 && cp <= 0xFE19) || (cp >= 0xFE30 && cp <= 0xFE6F) || (cp >= 0xFF01 && cp <= 0xFF60) || (cp >= 0xFFE0 && cp <= 0xFFE6) || (cp >= 0x1F300 && cp <= 0x1F9FF))) ? 2 : 1;
-            i += static_cast<std::size_t>(len);
-        }
-        return width;
-    }
-
 
     void text_input::insert_utf8(char32_t cp)
     {

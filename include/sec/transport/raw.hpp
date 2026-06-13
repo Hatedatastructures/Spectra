@@ -27,8 +27,6 @@ namespace sec::transport
     {
         std::uint32_t address{0};
         std::uint16_t port{0};
-
-        [[nodiscard]] auto to_string() const -> std::string;
     };
 
 

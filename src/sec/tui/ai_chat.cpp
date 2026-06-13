@@ -47,26 +47,6 @@ namespace sec::tui
     namespace
     {
 
-        auto url_decode(const std::string &s) -> std::string
-        {
-            auto out = std::string{};
-            for (std::size_t i = 0; i < s.size(); ++i)
-            {
-                if (s[i] == '%' && i + 2 < s.size())
-                {
-                    auto hex = s.substr(i + 1, 2);
-                    auto val = static_cast<char>(std::stoi(hex, nullptr, 16));
-                    out.push_back(val);
-                    i += 2;
-                }
-                else
-                {
-                    out.push_back(s[i]);
-                }
-            }
-            return out;
-        }
-
         struct parsed_url
         {
             std::string scheme;

@@ -45,8 +45,6 @@ namespace sec::engine
         [[nodiscard]] auto subscribe(packet_callback callback)
             -> std::size_t;
 
-        void unsubscribe(std::size_t handle);
-
         void set_filter(std::string_view bpf_filter, std::error_code &ec);
 
         [[nodiscard]] auto is_running() const noexcept -> bool;

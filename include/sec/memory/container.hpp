@@ -18,11 +18,6 @@
 #include <vector>
 
 
-namespace sec
-{
-
-} // namespace sec
-
 namespace sec::memory
 {
 

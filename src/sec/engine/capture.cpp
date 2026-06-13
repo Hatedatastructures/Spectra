@@ -87,17 +87,6 @@ namespace sec::engine
     }
 
 
-    // 取消订阅数据包回调
-    void capture_session::unsubscribe(std::size_t handle)
-    {
-        std::lock_guard lock{subscribers_mutex_};
-        if (handle < subscribers_.size())
-        {
-            subscribers_[handle] = nullptr;
-        }
-    }
-
-
     // 设置 BPF 过滤器
     void capture_session::set_filter(std::string_view bpf_filter, std::error_code &ec)
     {

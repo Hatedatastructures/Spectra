@@ -11,18 +11,6 @@
 namespace sec::transport
 {
 
-    // 将端点地址转换为点分十进制字符串（MSB-first，与 parse_ipv4 对应）
-    auto endpoint::to_string() const -> std::string
-    {
-        const auto a = (address >> 24) & 0xFF;
-        const auto b = (address >> 16) & 0xFF;
-        const auto c = (address >> 8) & 0xFF;
-        const auto d = (address >> 0) & 0xFF;
-        return std::to_string(a) + "." + std::to_string(b) + "." +
-               std::to_string(c) + "." + std::to_string(d);
-    }
-
-
     // 构造原始套接字
     raw::raw(net::any_io_executor executor)
         : socket_{executor, net::generic::raw_protocol(AF_INET, IPPROTO_RAW)}

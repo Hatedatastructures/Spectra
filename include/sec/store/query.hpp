@@ -39,8 +39,6 @@ namespace sec::store
         [[nodiscard]] auto find_all(std::error_code &ec) noexcept
             -> std::vector<device_record>;
 
-        [[nodiscard]] auto update_last_seen(std::string_view ip, std::int64_t timestamp, std::error_code &ec) noexcept -> bool;
-
         [[nodiscard]] auto count(std::error_code &ec) noexcept -> std::int64_t;
 
     private:
@@ -101,8 +99,6 @@ namespace sec::store
 
         [[nodiscard]] auto insert(const traffic_log &rec, std::error_code &ec) noexcept -> bool;
 
-        [[nodiscard]] auto insert_batch(const std::vector<traffic_log> &logs, std::error_code &ec) noexcept -> bool;
-
         [[nodiscard]] auto find_by_time_range(std::int64_t from_ts, std::int64_t to_ts, std::error_code &ec) noexcept
             -> std::vector<traffic_log>;
 
@@ -125,9 +121,6 @@ namespace sec::store
         [[nodiscard]] auto acknowledge(std::int64_t id, std::error_code &ec) noexcept -> bool;
 
         [[nodiscard]] auto find_unacknowledged(std::error_code &ec) noexcept
-            -> std::vector<alert_record>;
-
-        [[nodiscard]] auto find_by_severity(std::string_view severity, std::error_code &ec) noexcept
             -> std::vector<alert_record>;
 
         [[nodiscard]] auto count_unacknowledged(std::error_code &ec) noexcept

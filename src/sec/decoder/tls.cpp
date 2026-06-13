@@ -24,14 +24,6 @@ namespace sec::decoder
         }
 
 
-        auto read_u24_be(const std::byte *p) noexcept -> std::uint32_t
-        {
-            return (static_cast<std::uint32_t>(p[0]) << 16) |
-                   (static_cast<std::uint32_t>(p[1]) << 8) |
-                   (static_cast<std::uint32_t>(p[2]));
-        }
-
-
         // TLS Content Type
         constexpr std::uint8_t content_type_handshake{22};
 
