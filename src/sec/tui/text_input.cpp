@@ -1,6 +1,7 @@
 // 文本输入状态机
 
 #include <sec/tui/text_input.hpp>
+#include <sec/tui/terminal_renderer.hpp>
 
 #include <cpp-terminal/key.hpp>
 #include <spdlog/spdlog.h>
@@ -75,15 +76,8 @@ namespace sec::tui
             }
 
             // 零宽字符判断（ZWJ、VS、skin tone、组合标记等）
-            auto is_zero = (cp == 0x200D) ||
-                           (cp >= 0xFE00 && cp <= 0xFE0F) ||
-                           (cp >= 0xE0100 && cp <= 0xE01EF) ||
-                           (cp >= 0x1F3FB && cp <= 0x1F3FF) ||
-                           (cp >= 0x0300 && cp <= 0x036F) ||
-                           cp == 0x200B || cp == 0x200C || cp == 0x200E || cp == 0x200F ||
-                           (cp >= 0x202A && cp <= 0x202E) ||
-                           (cp >= 0x2060 && cp <= 0x206F) ||
-                           cp == 0xFEFF;
+            // 使用 terminal_renderer 公共 API，避免重复维护
+            auto is_zero = sec::tui::is_zero_width_cp(cp);
 
             p = char_start;
             if (!is_zero) break;  // 主字符，停止

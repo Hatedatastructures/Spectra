@@ -165,15 +165,16 @@ namespace sec::tui
             return out;
         }
 
-        auto extract_delta_content(const std::string &line) -> std::string
+        // 通用 JSON 字符串字段提取：定位 "key"，跳过 : 与空白，读取双引号字符串内容
+        // 同时支持 OpenAI 的 "content" 和 Anthropic 的 "text" 字段，消除重复实现
+        auto extract_json_string_field(const std::string &line, const std::string &key) -> std::string
         {
-            static const std::string needle = "\"content\"";
-            auto pos = line.find(needle);
+            auto pos = line.find(key);
             if (pos == std::string::npos)
             {
                 return {};
             }
-            pos += needle.size();
+            pos += key.size();
             while (pos < line.size() && (line[pos] == ' ' || line[pos] == ':')) ++pos;
             if (pos >= line.size() || line[pos] != '"') return {};
             ++pos;
@@ -195,6 +196,31 @@ namespace sec::tui
             return out;
         }
 
+        auto extract_delta_content(const std::string &line) -> std::string
+        {
+            return extract_json_string_field(line, "\"content\"");
+        }
+
+        // 公共 messages 数组构造（user/assistant 角色，最多 8 条）
+        auto build_messages_array(const std::vector<chat_message> &history) -> std::string
+        {
+            auto body = std::string{};
+            body += "[";
+            auto count = std::size_t{0};
+            for (const auto &m : history)
+            {
+                if (count >= 8) break;
+                if (m.who == chat_message::role::system) continue;
+                if (count > 0) body += ",";
+                auto role = std::string{"user"};
+                if (m.who == chat_message::role::assistant) role = "assistant";
+                body += "{\"role\":\"" + role + "\",\"content\":\"" + json_escape(m.content) + "\"}";
+                ++count;
+            }
+            body += "]";
+            return body;
+        }
+
         auto build_request_body(const std::string &model, const std::string &system_prompt,
             const std::vector<chat_message> &history, int max_tokens, double temperature) -> std::string
         {
@@ -205,17 +231,15 @@ namespace sec::tui
             body += "\"temperature\":" + std::to_string(temperature) + ",";
             body += "\"messages\":[";
             body += "{\"role\":\"system\",\"content\":\"" + json_escape(system_prompt) + "\"},";
-            auto count = std::size_t{0};
+            // 跳过 history 中第一条 system（已作为顶层 system 注入）
+            auto filtered = std::vector<chat_message>{};
             for (const auto &m : history)
             {
-                if (count >= 8) break;
-                if (count > 0) body += ",";
-                auto role = std::string{"user"};
-                if (m.who == chat_message::role::assistant) role = "assistant";
-                else if (m.who == chat_message::role::system) continue;
-                body += "{\"role\":\"" + role + "\",\"content\":\"" + json_escape(m.content) + "\"}";
-                ++count;
+                if (m.who != chat_message::role::system) filtered.push_back(m);
             }
+            auto msgs = build_messages_array(filtered);
+            // 去掉 build_messages_array 输出首尾的 []
+            if (msgs.size() >= 2) body += msgs.substr(1, msgs.size() - 2);
             body += "]}";
             return body;
         }
@@ -229,50 +253,15 @@ namespace sec::tui
             body += "\"max_tokens\":" + std::to_string(max_tokens) + ",";
             body += "\"temperature\":" + std::to_string(temperature) + ",";
             body += "\"system\":\"" + json_escape(system_prompt) + "\",";
-            body += "\"messages\":[";
-            auto count = std::size_t{0};
-            for (const auto &m : history)
-            {
-                if (count >= 8) break;
-                if (m.who == chat_message::role::system) continue;
-                if (count > 0) body += ",";
-                auto role = std::string{"user"};
-                if (m.who == chat_message::role::assistant) role = "assistant";
-                body += "{\"role\":\"" + role + "\",\"content\":\"" + json_escape(m.content) + "\"}";
-                ++count;
-            }
-            body += "]}";
+            body += "\"messages\":";
+            body += build_messages_array(history);
+            body += "}";
             return body;
         }
 
         auto extract_delta_content_anthropic(const std::string &line) -> std::string
         {
-            static const std::string needle = "\"text\"";
-            auto pos = line.find(needle);
-            if (pos == std::string::npos)
-            {
-                return {};
-            }
-            pos += needle.size();
-            while (pos < line.size() && (line[pos] == ' ' || line[pos] == ':')) ++pos;
-            if (pos >= line.size() || line[pos] != '"') return {};
-            ++pos;
-            auto out = std::string{};
-            while (pos < line.size() && line[pos] != '"')
-            {
-                if (line[pos] == '\\' && pos + 1 < line.size())
-                {
-                    auto next = line[pos + 1];
-                    if (next == '"') { out.push_back('"'); pos += 2; continue; }
-                    if (next == '\\') { out.push_back('\\'); pos += 2; continue; }
-                    if (next == 'n') { out.push_back('\n'); pos += 2; continue; }
-                    if (next == 'r') { out.push_back('\r'); pos += 2; continue; }
-                    if (next == 't') { out.push_back('\t'); pos += 2; continue; }
-                }
-                out.push_back(line[pos]);
-                ++pos;
-            }
-            return out;
+            return extract_json_string_field(line, "\"text\"");
         }
 
         void parse_sse_chunk(const std::string &chunk,
