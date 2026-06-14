@@ -6,12 +6,14 @@ target_sources(${PROJECT_NAME}_static_library
         ${PROJECT_SOURCE_DIR}/include/sec/detector/alert.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/detector/rule.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/detector/anomaly.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/detector/forest.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/detector/pipeline.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/detector/port_scan.hpp
     PRIVATE
         alert.cpp
         rule.cpp
         anomaly.cpp
+        forest.cpp
         pipeline.cpp
         port_scan.cpp
 )

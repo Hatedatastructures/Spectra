@@ -12,6 +12,7 @@
 #include <sec/detector/alert.hpp>
 #include <sec/detector/rule.hpp>
 #include <sec/detector/anomaly.hpp>
+#include <sec/detector/forest.hpp>
 #include <sec/detector/port_scan.hpp>
 
 #include <chrono>
@@ -122,6 +123,12 @@ namespace sec::detector
         rule_engine rules_;
         anomaly_detector anomaly_;
         port_scan_detector port_scan_;
+        isolation_forest forest_;
+
+        // iForest 训练缓冲
+        std::vector<std::vector<double>> training_buffer_;
+        static constexpr std::size_t train_threshold{500};
+        static constexpr double anomaly_score_threshold{0.7};
 
         std::vector<detection_callback> subscribers_;
         std::size_t sub_next_{0};

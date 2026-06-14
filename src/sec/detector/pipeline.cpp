@@ -96,6 +96,44 @@ namespace sec::detector
             emit_alert(std::move(anomaly_result.value()));
         }
 
+        // Isolation Forest 异常检测
+        auto features = std::vector<double>{
+            static_cast<double>(pkt.frame.src_port),
+            static_cast<double>(pkt.frame.dst_port),
+            static_cast<double>(pkt.frame.protocol),
+            static_cast<double>(pkt.frame.payload.size()),
+            static_cast<double>(pkt.frame.tcp_flags),
+            static_cast<double>(pkt.frame.src_ip & 0xFF),
+            static_cast<double>(pkt.frame.dst_ip & 0xFF),
+        };
+
+        if (!forest_.is_trained())
+        {
+            // 训练阶段：收集样本
+            training_buffer_.push_back(features);
+            if (training_buffer_.size() >= train_threshold)
+            {
+                forest_.train(training_buffer_);
+                training_buffer_.clear();
+            }
+        }
+        else
+        {
+            // 检测阶段
+            auto anomaly_score = forest_.score(features);
+            if (anomaly_score > anomaly_score_threshold)
+            {
+                alert a;
+                a.level = severity::high;
+                a.type = category::suspicious_traffic;
+                a.source_ip = decoder::ip_to_string(pkt.frame.src_ip);
+                a.description = "AI anomaly: isolation forest score " +
+                    std::to_string(anomaly_score).substr(0, 6);
+                a.detected_at = std::chrono::steady_clock::now();
+                emit_alert(std::move(a));
+            }
+        }
+
         // 端口扫描检测
         auto ps_result = port_scan_.check(pkt.frame);
         if (ps_result.has_value())

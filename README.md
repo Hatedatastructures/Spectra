@@ -184,6 +184,7 @@ cp spectra.json.example spectra.json
 | DNS 隧道检测 | 超长域名 + TXT 记录告警 | ✅ |
 | 明文凭据检测 | FTP PASS / SMTP AUTH / HTTP URI 凭据参数 | ✅ |
 | C2 信标检测 | 周期性连接变异系数分析（CV < 0.3） | ✅ |
+| AI 异常检测 | Isolation Forest 无监督学习（纯 C++，零依赖） | ✅ |
 | 沙箱动态分析 | 3 后端（VirtualBox/QEMU/Hyper-V）+ 3 监控（ETW/strace/VMI） | ✅ |
 
 ---
@@ -226,6 +227,7 @@ Windows 系统库：`ws2_32` / `mswsock` / `crypt32` / `wininet`（AI HTTPS 走 
 - 告警关联与去重（60s 窗口去重已实现，关联分析后续）
 - JA3 恶意指纹库（6 个 C2 工具已入库，威胁情报定期更新）
 - TLS 弱套件 / 证书异常 / 证书透明度检查
+- AI 异常检测 Isolation Forest（已实现，纯 C++ 无外部依赖）
 
 **规划中（P3）**
 
