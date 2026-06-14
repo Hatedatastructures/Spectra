@@ -6,11 +6,13 @@
 #include <sec/detector/alert.hpp>
 #include <sec/detector/rule.hpp>
 #include <sec/detector/anomaly.hpp>
+#include <sec/detector/forest.hpp>
 
 #include <array>
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -358,6 +360,56 @@ auto TestAnomalyDestinationTracking() -> int
 }
 
 
+auto TestIsolationForest() -> int
+{
+    using namespace sec::detector;
+
+    isolation_forest forest{100, 128};
+
+    CHECK(!forest.is_trained());
+
+    // 生成正常样本：模拟典型网络流量
+    auto rng = std::mt19937{42};
+    auto normal_ports = std::array<int, 5>{80, 443, 22, 53, 25};
+    auto size_dist = std::uniform_real_distribution<double>(200, 1400);
+
+    auto normal = std::vector<std::vector<double>>{};
+    for (auto i = 0; i < 300; ++i)
+    {
+        auto port = normal_ports[std::uniform_int_distribution<int>(0, 4)(rng)];
+        normal.push_back({
+            static_cast<double>(std::uniform_int_distribution<int>(1024, 65535)(rng)),
+            static_cast<double>(port),
+            6.0,                              // TCP
+            size_dist(rng),
+            static_cast<double>(std::uniform_int_distribution<int>(0, 3)(rng)),
+            static_cast<double>(std::uniform_int_distribution<int>(1, 254)(rng)),
+            static_cast<double>(std::uniform_int_distribution<int>(1, 254)(rng)),
+        });
+    }
+
+    forest.train(normal);
+    CHECK(forest.is_trained());
+    CHECK(forest.feature_count() == 7);
+
+    // 正常样本应该低分
+    auto normal_feat = std::vector<double>{50000, 443, 6, 800, 2, 192, 168};
+    auto normal_score = forest.score(normal_feat);
+    std::cout << "  Normal sample score: " << normal_score << "\n";
+
+    // 异常样本（端口 4444 + UDP + 零载荷 + 异常 tcp_flags）
+    auto anomaly_feat = std::vector<double>{33333, 4444, 17, 0, 255, 1, 1};
+    auto anomaly_score = forest.score(anomaly_feat);
+    std::cout << "  Anomaly sample score: " << anomaly_score << "\n";
+
+    // 核心断言：异常分必须高于正常分
+    CHECK(anomaly_score > normal_score);
+
+    std::cout << "  PASS: IsolationForest\n";
+    return 0;
+}
+
+
 // --- main ---
 
 auto main() -> int
@@ -375,6 +427,7 @@ auto main() -> int
     rc |= TestAnomalyReset();
     rc |= TestRuleEngineMultiPort();
     rc |= TestAnomalyDestinationTracking();
+    rc |= TestIsolationForest();
 
     if (rc == 0)
     {

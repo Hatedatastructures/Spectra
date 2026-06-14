@@ -366,6 +366,36 @@ static auto TestTlsDetectStripping() -> int
     return 0;
 }
 
+
+static auto TestTlsWeakCipherDetection() -> int
+{
+    sec::mitm::tls_detector detector;
+
+    sec::decoder::tls_info tls;
+    tls.client_version = 0x0303;
+    // 包含 RC4 套件（0x0005）
+    tls.cipher_suites = {0x002F, 0x0035, 0x0005, 0x000A};
+
+    detector.observe_client_hello(0x0A000001, 0x0A000002, tls);
+
+    // TLS 响应应触发弱套件告警
+    auto result = detector.check_response(0x0A000001, 0x0A000002, sec::mitm::response_protocol::tls);
+    CHECK(result.has_value());
+    CHECK(result->type == sec::mitm::tls_alert_type::weak_cipher);
+
+    // 正常套件不应触发
+    sec::decoder::tls_info safe_tls;
+    safe_tls.client_version = 0x0303;
+    safe_tls.cipher_suites = {0x002F, 0x0035, 0x009C};
+
+    detector.observe_client_hello(0x0A000003, 0x0A000004, safe_tls);
+    auto safe_result = detector.check_response(0x0A000003, 0x0A000004, sec::mitm::response_protocol::tls);
+    CHECK(!safe_result.has_value());
+
+    std::cout << "  PASS: TlsWeakCipherDetection\n";
+    return 0;
+}
+
 static auto TestTlsDetectNormalResponse() -> int
 {
     sec::mitm::tls_detector detector;
@@ -411,6 +441,7 @@ auto main() -> int
     if (auto r = TestTlsDetectStripping(); r) { ++failures; }
     if (auto r = TestTlsDetectNormalResponse(); r) { ++failures; }
     if (auto r = TestTlsDetectNoPendingSession(); r) { ++failures; }
+    if (auto r = TestTlsWeakCipherDetection(); r) { ++failures; }
 
     if (failures == 0)
     {
