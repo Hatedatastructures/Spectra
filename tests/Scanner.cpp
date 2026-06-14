@@ -4,7 +4,7 @@
  */
 
 #include <sec/scanner/device.hpp>
-#include <sec/scanner/port_scanner.hpp>
+#include <sec/scanner/port.hpp>
 
 #include <array>
 #include <cstdint>
@@ -28,7 +28,7 @@ using namespace sec::scanner;
         }                                                  \
     } while (0)
 
-// --- ARP 包结构常量 (与 arp_scanner.cpp 保持一致) ---
+// --- ARP 包结构常量 (与 arp.cpp 保持一致) ---
 // 以太网帧头: dst_mac(6) + src_mac(6) + ethertype(2) = 14
 // ARP 包: hw_type(2) + proto_type(2) + hw_size(1) + proto_size(1) +
 //          opcode(2) + sender_mac(6) + sender_ip(4) + target_mac(6) +

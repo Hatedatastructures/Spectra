@@ -4,14 +4,14 @@ target_sources(${PROJECT_NAME}_static_library
     FILES
         ${PROJECT_SOURCE_DIR}/include/sec/detector.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/detector/alert.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/detector/rule_engine.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/detector/rule.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/detector/anomaly.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/detector/detection_pipeline.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/detector/port_scan_detector.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/detector/pipeline.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/detector/port_scan.hpp
     PRIVATE
         alert.cpp
-        rule_engine.cpp
+        rule.cpp
         anomaly.cpp
-        detection_pipeline.cpp
-        port_scan_detector.cpp
+        pipeline.cpp
+        port_scan.cpp
 )

@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include <sec/mitm/arp_detect.hpp>
-#include <sec/mitm/dns_detect.hpp>
-#include <sec/mitm/tls_detect.hpp>
+#include <sec/mitm/arp.hpp>
+#include <sec/mitm/dns.hpp>
+#include <sec/mitm/tls.hpp>
 #include <sec/mitm/pipeline.hpp>

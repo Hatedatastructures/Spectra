@@ -52,9 +52,9 @@ namespace sec::store
         [[nodiscard]] auto prepare(std::string_view sql,
                                    std::error_code &ec) noexcept -> statement;
 
-        auto begin_transaction(std::error_code &ec) noexcept -> bool;
-        auto commit(std::error_code &ec) noexcept -> bool;
-        auto rollback(std::error_code &ec) noexcept -> bool;
+        [[nodiscard]] auto begin_transaction(std::error_code &ec) noexcept -> bool;
+        [[nodiscard]] auto commit(std::error_code &ec) noexcept -> bool;
+        [[nodiscard]] auto rollback(std::error_code &ec) noexcept -> bool;
 
         [[nodiscard]] auto last_insert_rowid() const noexcept -> std::int64_t;
         [[nodiscard]] auto changes_count() const noexcept -> int;
@@ -82,12 +82,12 @@ namespace sec::store
 
         [[nodiscard]] auto is_valid() const noexcept -> bool;
 
-        auto bind(int index, std::int64_t value) noexcept -> bool;
-        auto bind(int index, int value) noexcept -> bool;
-        auto bind(int index, double value) noexcept -> bool;
-        auto bind(int index, std::string_view value) noexcept -> bool;
-        auto bind(int index, std::span<const std::byte> value) noexcept -> bool;
-        auto bind_null(int index) noexcept -> bool;
+        [[nodiscard]] auto bind(int index, std::int64_t value) noexcept -> bool;
+        [[nodiscard]] auto bind(int index, int value) noexcept -> bool;
+        [[nodiscard]] auto bind(int index, double value) noexcept -> bool;
+        [[nodiscard]] auto bind(int index, std::string_view value) noexcept -> bool;
+        [[nodiscard]] auto bind(int index, std::span<const std::byte> value) noexcept -> bool;
+        [[nodiscard]] auto bind_null(int index) noexcept -> bool;
 
         [[nodiscard]] auto step() noexcept -> int;
 

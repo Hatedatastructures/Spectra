@@ -88,7 +88,7 @@ namespace sec::store
 
 
     // 关闭数据库连接并释放句柄
-    auto database::close() noexcept -> void
+    void database::close() noexcept
     {
         if (handle_)
         {
@@ -326,21 +326,21 @@ namespace sec::store
 
 
     // 重置预编译语句以便重新执行
-    auto statement::reset() noexcept -> void
+    void statement::reset() noexcept
     {
         if (stmt_) sqlite3_reset(stmt_);
     }
 
 
     // 清除所有参数绑定
-    auto statement::clear_bindings() noexcept -> void
+    void statement::clear_bindings() noexcept
     {
         if (stmt_) sqlite3_clear_bindings(stmt_);
     }
 
 
     // 关闭并释放预编译语句
-    auto statement::close() noexcept -> void
+    void statement::close() noexcept
     {
         if (stmt_)
         {

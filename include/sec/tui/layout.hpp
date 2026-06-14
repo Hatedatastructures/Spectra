@@ -4,8 +4,21 @@
  */
 #pragma once
 
+#include <cstdint>
+
 namespace sec::tui
 {
+    /**
+     * @brief 侧栏可见性
+     */
+    enum class sidebar_state : std::uint8_t
+    {
+        /** @brief 展开 */
+        visible,
+        /** @brief 折叠 */
+        hidden
+    };
+
     struct panel_rect
     {
         int row{0};
@@ -23,7 +36,7 @@ namespace sec::tui
         int sidebar_width{20};
         bool sidebar_visible{true};
 
-        static auto calculate(int term_rows, int term_cols, int sidebar_w, bool sidebar_vis) -> layout;
+        static auto calculate(int term_rows, int term_cols, int sidebar_w, sidebar_state state) -> layout;
     };
 
 } // namespace sec::tui

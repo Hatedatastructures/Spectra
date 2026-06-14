@@ -84,6 +84,19 @@ namespace sec
     }; // struct tui_config
 
     /**
+     * @brief 沙箱配置
+     * @details VirtualBox VM 名称、快照、超时等。
+     */
+    struct sandbox_config
+    {
+        std::string vm_name{"Win10-Analyze"};
+        std::string snapshot_name{"clean"};
+        std::uint32_t timeout_seconds{120};
+        std::string guest_workdir{"C:\\Users\\Public"};
+        std::string vboxmanage_path;
+    }; // struct sandbox_config
+
+    /**
      * @brief 全局配置聚合
      * @details 聚合所有子模块配置，支持 JSON 序列化。
      */
@@ -95,6 +108,7 @@ namespace sec
         ai_config ai{};
         trace_config trace{};
         tui_config tui{};
+        sandbox_config sandbox{};
     }; // struct config
 
     /**
@@ -182,6 +196,19 @@ struct glz::meta<sec::tui_config>
 };
 
 template <>
+struct glz::meta<sec::sandbox_config>
+{
+    using T = sec::sandbox_config;
+    static constexpr auto value = glz::object(
+        "vm_name", &T::vm_name,
+        "snapshot_name", &T::snapshot_name,
+        "timeout_seconds", &T::timeout_seconds,
+        "guest_workdir", &T::guest_workdir,
+        "vboxmanage_path", &T::vboxmanage_path
+    );
+};
+
+template <>
 struct glz::meta<sec::config>
 {
     using T = sec::config;
@@ -191,6 +218,7 @@ struct glz::meta<sec::config>
         "store", &T::store,
         "ai", &T::ai,
         "trace", &T::trace,
-        "tui", &T::tui
+        "tui", &T::tui,
+        "sandbox", &T::sandbox
     );
 };

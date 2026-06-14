@@ -208,7 +208,7 @@ namespace sec::store
 
 
     // 查询最近的扫描结果
-    [[nodiscard]] auto scan_query::find_recent(int limit, std::error_code &ec) noexcept -> std::vector<scan_result>
+    [[nodiscard]] auto scan_query::find_recent(std::size_t limit, std::error_code &ec) noexcept -> std::vector<scan_result>
     {
         auto stmt = db_.prepare(
             "SELECT id, scan_type, subnet, started_at, finished_at, "
@@ -460,6 +460,101 @@ namespace sec::store
         rec.description = stmt.column_string(5);
         rec.timestamp = stmt.column_int64(6);
         rec.acknowledged = stmt.column_int(7) != 0;
+        return rec;
+    }
+
+
+    // ---- analysis_query ----
+
+    analysis_query::analysis_query(database &db) noexcept
+        : db_{db}
+    {
+    }
+
+    [[nodiscard]] auto analysis_query::insert(const analysis_record &rec, std::error_code &ec) noexcept
+        -> std::int64_t
+    {
+        auto stmt = db_.prepare(
+            "INSERT INTO analysis_results "
+            "(target_path, target_hash, vm_name, submitted_at, completed_at, "
+            "status, score, report_path, summary) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ec);
+        if (!stmt.is_valid()) return 0;
+
+        if (!stmt.bind(1, rec.target_path)) return 0;
+        if (!stmt.bind(2, rec.target_hash)) return 0;
+        if (!stmt.bind(3, rec.vm_name)) return 0;
+        if (!stmt.bind(4, rec.submitted_at)) return 0;
+        if (!stmt.bind(5, rec.completed_at)) return 0;
+        if (!stmt.bind(6, rec.status)) return 0;
+        if (!stmt.bind(7, static_cast<int>(rec.score))) return 0;
+        if (!stmt.bind(8, rec.report_path)) return 0;
+        if (!stmt.bind(9, rec.summary)) return 0;
+
+        if (stmt.step() != SQLITE_DONE)
+        {
+            ec = fault::make_error_code(fault::code::db_query_failed);
+            return 0;
+        }
+
+        ec.clear();
+        return db_.last_insert_rowid();
+    }
+
+    [[nodiscard]] auto analysis_query::find_by_id(std::int64_t id, std::error_code &ec) noexcept
+        -> std::optional<analysis_record>
+    {
+        auto stmt = db_.prepare(
+            "SELECT id, target_path, target_hash, vm_name, "
+            "submitted_at, completed_at, status, score, report_path, summary "
+            "FROM analysis_results WHERE id = ?",
+            ec);
+        if (!stmt.is_valid()) return std::nullopt;
+        if (!stmt.bind(1, id)) return std::nullopt;
+
+        if (stmt.step() == SQLITE_ROW)
+        {
+            ec.clear();
+            return read_analysis(stmt);
+        }
+        return std::nullopt;
+    }
+
+    [[nodiscard]] auto analysis_query::find_recent(std::size_t limit, std::error_code &ec) noexcept
+        -> std::vector<analysis_record>
+    {
+        auto stmt = db_.prepare(
+            "SELECT id, target_path, target_hash, vm_name, "
+            "submitted_at, completed_at, status, score, report_path, summary "
+            "FROM analysis_results ORDER BY submitted_at DESC LIMIT ?",
+            ec);
+        if (!stmt.is_valid()) return {};
+        if (!stmt.bind(1, static_cast<std::int64_t>(limit))) return {};
+
+        auto results = std::vector<analysis_record>{};
+        while (stmt.step() == SQLITE_ROW)
+        {
+            results.push_back(read_analysis(stmt));
+        }
+        ec.clear();
+        return results;
+    }
+
+
+    [[nodiscard]] auto read_analysis(statement &stmt) noexcept -> analysis_record
+    {
+        analysis_record rec;
+        rec.id = stmt.column_int64(0);
+        rec.target_path = stmt.column_string(1);
+        rec.target_hash = stmt.column_string(2);
+        rec.vm_name = stmt.column_string(3);
+        rec.submitted_at = stmt.column_int64(4);
+        rec.completed_at = stmt.column_int64(5);
+        rec.status = stmt.column_string(6);
+        rec.score = static_cast<std::uint8_t>(stmt.column_int(7));
+        rec.report_path = stmt.column_string(8);
+        rec.summary = stmt.column_string(9);
         return rec;
     }
 

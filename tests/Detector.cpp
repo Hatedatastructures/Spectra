@@ -4,7 +4,7 @@
  */
 
 #include <sec/detector/alert.hpp>
-#include <sec/detector/rule_engine.hpp>
+#include <sec/detector/rule.hpp>
 #include <sec/detector/anomaly.hpp>
 
 #include <array>
@@ -257,6 +257,107 @@ auto TestAnomalyReset() -> int
 }
 
 
+auto TestRuleEngineMultiPort() -> int
+{
+    using namespace sec::detector;
+
+    rule_engine engine;
+
+    rule r_ssh;
+    r_ssh.id = "brute_ssh";
+    r_ssh.protocol = rule_protocol::tcp;
+    r_ssh.destination.any = false;
+    r_ssh.destination.port = 22;
+    r_ssh.type = category::brute_force;
+    r_ssh.threshold_count = 3;
+    r_ssh.threshold_seconds = 60;
+    engine.add_rule(std::move(r_ssh));
+
+    rule r_ftp;
+    r_ftp.id = "brute_ftp";
+    r_ftp.protocol = rule_protocol::tcp;
+    r_ftp.destination.any = false;
+    r_ftp.destination.port = 21;
+    r_ftp.type = category::brute_force;
+    r_ftp.threshold_count = 3;
+    r_ftp.threshold_seconds = 60;
+    engine.add_rule(std::move(r_ftp));
+
+    CHECK(engine.rule_count() == 2);
+
+    sec::decoder::packet_info frame;
+    frame.src_ip = 0xC0A80101;
+    frame.dst_ip = 0xC0A80102;
+    frame.dst_port = 22;
+    frame.protocol = 6;
+    frame.payload = std::span<const std::byte>{};
+
+    // 触发 SSH 阈值（threshold_count=3，发 4 次确保超过）
+    auto alerts = std::vector<alert>{};
+    for (auto i = 0; i < 4; ++i)
+    {
+        auto result = engine.match(frame, frame.payload);
+        for (auto &a : result) alerts.push_back(std::move(a));
+    }
+    CHECK(!alerts.empty());
+
+    // FTP 端口匹配（threshold_count=3，发 4 次）
+    frame.dst_port = 21;
+    alerts.clear();
+    for (auto i = 0; i < 4; ++i)
+    {
+        auto result = engine.match(frame, frame.payload);
+        for (auto &a : result) alerts.push_back(std::move(a));
+    }
+    CHECK(!alerts.empty());
+
+    // 不匹配的端口
+    frame.dst_port = 8080;
+    alerts.clear();
+    for (auto i = 0; i < 4; ++i)
+    {
+        auto result = engine.match(frame, frame.payload);
+        for (auto &a : result) alerts.push_back(std::move(a));
+    }
+    CHECK(alerts.empty());
+
+    std::cout << "  PASS: RuleEngineMultiPort\n";
+    return 0;
+}
+
+
+auto TestAnomalyDestinationTracking() -> int
+{
+    using namespace sec::detector;
+
+    anomaly_detector det{{}};
+
+    sec::decoder::packet_info frame;
+    frame.src_ip = 0x0A000001;
+    frame.protocol = 6;
+    frame.payload = std::span<const std::byte>{};
+
+    frame.dst_ip = 0x0A000002;
+    frame.dst_port = 80;
+    (void)det.observe(frame);
+    (void)det.observe(frame);
+
+    frame.dst_ip = 0x0A000003;
+    (void)det.observe(frame);
+
+    frame.dst_ip = 0x0A000004;
+    (void)det.observe(frame);
+
+    auto *stats = det.get_stats(0x0A000001);
+    CHECK(stats != nullptr);
+    CHECK(stats->packet_count == 4);
+    CHECK(stats->unique_destinations == 3);
+
+    std::cout << "  PASS: AnomalyDestinationTracking\n";
+    return 0;
+}
+
+
 // --- main ---
 
 auto main() -> int
@@ -272,6 +373,8 @@ auto main() -> int
     rc |= TestRuleEngineCaseInsensitive();
     rc |= TestAnomalyBasic();
     rc |= TestAnomalyReset();
+    rc |= TestRuleEngineMultiPort();
+    rc |= TestAnomalyDestinationTracking();
 
     if (rc == 0)
     {

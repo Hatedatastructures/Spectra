@@ -50,7 +50,7 @@ namespace sec::fault
      * @details 单例模式，提供 fault::code 到字符串的映射。
      * 用于 std::error_code 和 boost::system::error_code 的分类查找。
      */
-    class fault_category : public std::error_category
+    class fault_category final : public std::error_category
     {
     public:
         [[nodiscard]] auto name() const noexcept

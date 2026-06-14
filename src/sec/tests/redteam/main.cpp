@@ -1,9 +1,9 @@
 // 红队黑盒测试套件 — 主入口
 
 #include <sec/decoder/frame.hpp>
-#include <sec/detector/port_scan_detector.hpp>
-#include <sec/mitm/arp_detect.hpp>
-#include <sec/mitm/tls_detect.hpp>
+#include <sec/detector/port_scan.hpp>
+#include <sec/mitm/arp.hpp>
+#include <sec/mitm/tls.hpp>
 #include <sec/decoder/tls.hpp>
 
 #include <cstdio>
@@ -16,10 +16,10 @@
 #include <span>
 #include <cstddef>
 #include <cstring>
-#include <sec/detector/rule_engine.hpp>
+#include <sec/detector/rule.hpp>
 #include <sec/detector/anomaly.hpp>
-#include <sec/mitm/dns_detect.hpp>
-#include <sec/detector/detection_pipeline.hpp>
+#include <sec/mitm/dns.hpp>
+#include <sec/detector/pipeline.hpp>
 #include <algorithm>
 #include <cstdint>
 #include <unordered_set>
@@ -618,7 +618,7 @@ namespace
         info.client_version = 0x0303;
 
         detector.observe_client_hello(ip_100, ip_1, info);
-        auto alert = detector.check_response(ip_100, ip_1, false);
+        auto alert = detector.check_response(ip_100, ip_1, sec::mitm::response_protocol::plaintext);
 
         if (alert && alert->type == sec::mitm::tls_alert_type::stripping)
         {
@@ -2904,7 +2904,7 @@ namespace
         r.expected = {"nullopt"};
 
         sec::mitm::tls_detector detector;
-        auto alert = detector.check_response(ip_100, ip_1, false);
+        auto alert = detector.check_response(ip_100, ip_1, sec::mitm::response_protocol::plaintext);
 
         if (!alert)
         {
@@ -2930,8 +2930,8 @@ namespace
         info.client_version = 0x0303;
 
         detector.observe_client_hello(ip_100, ip_1, info);
-        auto alert1 = detector.check_response(ip_100, ip_1, false);
-        auto alert2 = detector.check_response(ip_100, ip_1, false);
+        auto alert1 = detector.check_response(ip_100, ip_1, sec::mitm::response_protocol::plaintext);
+        auto alert2 = detector.check_response(ip_100, ip_1, sec::mitm::response_protocol::plaintext);
 
         if (alert1 && !alert2)
         {

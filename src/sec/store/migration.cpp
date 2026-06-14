@@ -83,6 +83,23 @@ namespace sec::store
                 "CREATE INDEX IF NOT EXISTS idx_alerts_severity ON alerts(severity);"
                 "CREATE INDEX IF NOT EXISTS idx_alerts_ts ON alerts(timestamp);"
                 "CREATE INDEX IF NOT EXISTS idx_alerts_cat ON alerts(category);"},
+            // v5: 沙箱分析结果表
+            migration_entry{5,
+                "CREATE TABLE IF NOT EXISTS analysis_results ("
+                "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                "target_path TEXT NOT NULL,"
+                "target_hash TEXT NOT NULL DEFAULT '',"
+                "vm_name TEXT NOT NULL DEFAULT '',"
+                "submitted_at INTEGER NOT NULL DEFAULT 0,"
+                "completed_at INTEGER NOT NULL DEFAULT 0,"
+                "status TEXT NOT NULL DEFAULT 'pending',"
+                "score INTEGER NOT NULL DEFAULT 0,"
+                "report_path TEXT NOT NULL DEFAULT '',"
+                "summary TEXT NOT NULL DEFAULT ''"
+                ");"
+                "CREATE INDEX IF NOT EXISTS idx_analysis_score ON analysis_results(score);"
+                "CREATE INDEX IF NOT EXISTS idx_analysis_ts ON analysis_results(submitted_at);",
+            },
         };
 
     } // anonymous namespace

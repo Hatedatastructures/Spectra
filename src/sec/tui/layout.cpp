@@ -7,14 +7,15 @@
 namespace sec::tui
 {
 
-    auto layout::calculate(int term_rows, int term_cols, int sidebar_w, bool sidebar_vis) -> layout
+    auto layout::calculate(int term_rows, int term_cols, int sidebar_w, sidebar_state state) -> layout
     {
         auto rows = std::max(term_rows, 10);
         auto cols = std::max(term_cols, 20);
 
+        const auto visible = (state == sidebar_state::visible);
         auto lo = layout{};
-        lo.sidebar_visible = sidebar_vis;
-        lo.sidebar_width = sidebar_vis ? sidebar_w : 0;
+        lo.sidebar_visible = visible;
+        lo.sidebar_width = visible ? sidebar_w : 0;
 
         auto sw = lo.sidebar_width;
 

@@ -4,33 +4,33 @@ target_sources(${PROJECT_NAME}_static_library
     FILES
         ${PROJECT_SOURCE_DIR}/include/sec/tui/tui.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/tui/application.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/tui/ai_chat.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/tui/markdown_renderer.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/tui/command_registry.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/tui/components/chat_panel.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/tui/components/input_bar.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/tui/components/sidebar.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/tui/components/status_bar.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/tui/chat.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/tui/markdown.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/tui/command.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/tui/components/chat.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/tui/components/input.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/tui/components/side.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/tui/components/status.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/tui/layout.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/tui/event_queue.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/tui/text_input.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/tui/terminal_renderer.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/tui/event.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/tui/input.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/tui/terminal.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/tui/theme.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/tui/syntax_highlight.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/tui/syntax.hpp
     PRIVATE
         application.cpp
-        ai_chat.cpp
-        markdown_renderer.cpp
-        syntax_highlight.cpp
-        command_registry.cpp
-        components/chat_panel.cpp
-        components/input_bar.cpp
-        components/sidebar.cpp
-        components/status_bar.cpp
+        chat.cpp
+        markdown.cpp
+        syntax.cpp
+        command.cpp
+        components/chat.cpp
+        components/input.cpp
+        components/side.cpp
+        components/status.cpp
         layout.cpp
-        event_queue.cpp
-        text_input.cpp
-        terminal_renderer.cpp
+        event.cpp
+        input.cpp
+        terminal.cpp
         theme.cpp
 )
 

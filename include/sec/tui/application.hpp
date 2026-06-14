@@ -8,18 +8,18 @@
 
 #include <sec/config.hpp>
 #include <sec/engine/context.hpp>
-#include <sec/scanner/arp_scanner.hpp>
-#include <sec/scanner/mdns_scanner.hpp>
-#include <sec/scanner/port_scanner.hpp>
-#include <sec/scanner/ssdp_scanner.hpp>
+#include <sec/scanner/arp.hpp>
+#include <sec/scanner/mdns.hpp>
+#include <sec/scanner/port.hpp>
+#include <sec/scanner/ssdp.hpp>
 #include <sec/decoder/pipeline.hpp>
-#include <sec/detector/detection_pipeline.hpp>
+#include <sec/detector/pipeline.hpp>
 #include <sec/mitm/pipeline.hpp>
 #include <sec/store/database.hpp>
 #include <sec/store/query.hpp>
 #include <sec/store/persist.hpp>
 
-#include <sec/tui/event_queue.hpp>
+#include <sec/tui/event.hpp>
 #include <sec/tui/theme.hpp>
 
 #include <cpp-terminal/window.hpp>
@@ -67,97 +67,106 @@ namespace sec::tui
 
         [[nodiscard]] auto run(int argc, char *argv[]) -> int;
 
-        auto context() noexcept -> engine::context &
+        [[nodiscard]] auto context() noexcept -> engine::context &
         {
             return context_;
         }
 
-        auto config() const noexcept -> const sec::config &
+        [[nodiscard]] auto config() const noexcept -> const sec::config &
         {
             return config_;
         }
 
-        auto arp() noexcept -> scanner::arp_scanner &
+        [[nodiscard]] auto arp() noexcept -> scanner::arp_scanner &
         {
             return arp_;
         }
 
-        auto mdns() noexcept -> scanner::mdns_scanner &
+        [[nodiscard]] auto mdns() noexcept -> scanner::mdns_scanner &
         {
             return mdns_;
         }
 
-        auto ssdp() noexcept -> scanner::ssdp_scanner &
+        [[nodiscard]] auto ssdp() noexcept -> scanner::ssdp_scanner &
         {
             return ssdp_;
         }
 
-        auto port() noexcept -> scanner::port_scanner &
+        [[nodiscard]] auto port() noexcept -> scanner::port_scanner &
         {
             return port_;
         }
 
-        auto database() noexcept -> store::database &
+        [[nodiscard]] auto database() noexcept -> store::database &
         {
             return *db_;
         }
 
-        auto device_query() noexcept -> store::device_query &
+        [[nodiscard]] auto device_query() noexcept -> store::device_query &
         {
             return *device_q_;
         }
 
-        auto scan_query() noexcept -> store::scan_query &
+        [[nodiscard]] auto scan_query() noexcept -> store::scan_query &
         {
             return *scan_q_;
         }
 
-        auto traffic_query() noexcept -> store::traffic_query &
+        [[nodiscard]] auto traffic_query() noexcept -> store::traffic_query &
         {
             return *traffic_q_;
         }
 
-        auto alert_query() noexcept -> store::alert_query &
+        [[nodiscard]] auto alert_query() noexcept -> store::alert_query &
         {
             return *alert_q_;
         }
 
-        auto persister() noexcept -> store::scan_persister &
+        [[nodiscard]] auto persister() noexcept -> store::scan_persister &
         {
             return *persister_;
         }
 
-        auto decoder() noexcept -> decoder::pipeline &
+        [[nodiscard]] auto analysis_query() noexcept -> store::analysis_query &
+        {
+            if (!analysis_q_)
+            {
+                analysis_q_ = std::make_unique<store::analysis_query>(*db_);
+            }
+            return *analysis_q_;
+        }
+
+        [[nodiscard]] auto decoder() noexcept -> decoder::pipeline &
         {
             return decoder_;
         }
 
-        auto detection() noexcept -> detector::detection_pipeline &
+        [[nodiscard]] auto detection() noexcept -> detector::detection_pipeline &
         {
             return *detection_;
         }
 
-        auto mitm() noexcept -> mitm::mitm_pipeline &
+        [[nodiscard]] auto mitm() noexcept -> mitm::mitm_pipeline &
         {
             return *mitm_;
         }
 
-        auto chat() noexcept -> ai_chat &
+        [[nodiscard]] auto chat() noexcept -> ai_chat &
         {
             return *chat_;
         }
 
-        auto registry() noexcept -> command_registry &
+        [[nodiscard]] auto registry() noexcept -> command_registry &
         {
             return *registry_;
         }
 
-        auto event_queue() noexcept -> ui_event_queue &
+        [[nodiscard]] auto event_queue() noexcept -> ui_event_queue &
         {
             return event_queue_;
         }
 
-        auto running() const noexcept -> bool
+        [[nodiscard]] auto running() const noexcept -> bool
         {
             return running_;
         }
@@ -167,12 +176,12 @@ namespace sec::tui
             running_ = false;
         }
 
-        auto theme() const noexcept -> const theme_palette &
+        [[nodiscard]] auto theme() const noexcept -> const theme_palette &
         {
             return active_theme_;
         }
 
-        auto theme_mode_value() const noexcept -> theme_mode
+        [[nodiscard]] auto theme_mode_value() const noexcept -> theme_mode
         {
             return active_theme_mode_;
         }
@@ -183,7 +192,7 @@ namespace sec::tui
         void setup_windows_console();
         void start_background_thread();
         void stop_background_thread();
-        auto render_frame() -> void;
+        void render_frame();
         void restore_terminal();
         void process_ui_events_one(const ui_event &ev);
         void poll_console_input();
@@ -200,6 +209,7 @@ namespace sec::tui
         std::unique_ptr<store::traffic_query> traffic_q_;
         std::unique_ptr<store::alert_query> alert_q_;
         std::unique_ptr<store::scan_persister> persister_;
+        std::unique_ptr<store::analysis_query> analysis_q_;
 
         decoder::pipeline decoder_;
         std::unique_ptr<detector::detection_pipeline> detection_;

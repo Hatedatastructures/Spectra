@@ -6,6 +6,6 @@
 #pragma once
 
 #include <sec/detector/alert.hpp>
-#include <sec/detector/rule_engine.hpp>
+#include <sec/detector/rule.hpp>
 #include <sec/detector/anomaly.hpp>
-#include <sec/detector/detection_pipeline.hpp>
+#include <sec/detector/pipeline.hpp>

@@ -80,7 +80,7 @@ namespace sec::store
 
         [[nodiscard]] auto finish(std::int64_t id, const scan_completion &completion, std::error_code &ec) noexcept -> bool;
 
-        [[nodiscard]] auto find_recent(int limit, std::error_code &ec) noexcept
+        [[nodiscard]] auto find_recent(std::size_t limit, std::error_code &ec) noexcept
             -> std::vector<scan_result>;
 
     private:
@@ -131,9 +131,48 @@ namespace sec::store
     };
 
 
+    /**
+     * @brief 沙箱分析结果记录
+     */
+    struct analysis_record
+    {
+        std::int64_t id{0};
+        std::string target_path;
+        std::string target_hash;
+        std::string vm_name;
+        std::int64_t submitted_at{0};
+        std::int64_t completed_at{0};
+        std::string status;
+        std::uint8_t score{0};
+        std::string report_path;
+        std::string summary;
+    };
+
+    /**
+     * @brief 沙箱分析结果查询辅助类
+     */
+    class analysis_query
+    {
+    public:
+        explicit analysis_query(database &db) noexcept;
+
+        [[nodiscard]] auto insert(const analysis_record &rec, std::error_code &ec) noexcept
+            -> std::int64_t;
+
+        [[nodiscard]] auto find_by_id(std::int64_t id, std::error_code &ec) noexcept
+            -> std::optional<analysis_record>;
+
+        [[nodiscard]] auto find_recent(std::size_t limit, std::error_code &ec) noexcept
+            -> std::vector<analysis_record>;
+
+    private:
+        database &db_;
+    };
+
     [[nodiscard]] auto read_device(statement &stmt) noexcept -> device_record;
     [[nodiscard]] auto read_scan_result(statement &stmt) noexcept -> scan_result;
     [[nodiscard]] auto read_traffic_log(statement &stmt) noexcept -> traffic_log;
     [[nodiscard]] auto read_alert(statement &stmt) noexcept -> alert_record;
+    [[nodiscard]] auto read_analysis(statement &stmt) noexcept -> analysis_record;
 
 } // namespace sec::store

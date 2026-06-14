@@ -4,16 +4,16 @@ target_sources(${PROJECT_NAME}_static_library
     FILES
         ${PROJECT_SOURCE_DIR}/include/sec/scanner.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/scanner/device.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/scanner/arp_scanner.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/scanner/mdns_scanner.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/scanner/ssdp_scanner.hpp
-        ${PROJECT_SOURCE_DIR}/include/sec/scanner/port_scanner.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/scanner/arp.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/scanner/mdns.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/scanner/ssdp.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/scanner/port.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/scanner/fingerprint.hpp
     PRIVATE
-        arp_scanner.cpp
-        mdns_scanner.cpp
-        ssdp_scanner.cpp
-        port_scanner.cpp
+        arp.cpp
+        mdns.cpp
+        ssdp.cpp
+        port.cpp
         fingerprint.cpp
 )
 

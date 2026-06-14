@@ -3,7 +3,6 @@
 #include <sec/cli/application.hpp>
 #include <sec/scanner/fingerprint.hpp>
 #include <sec/transport/pcap.hpp>
-#include <sec/decoder/util.hpp>
 #include <sec/detector/alert.hpp>
 #include <sec/util/format.hpp>
 #include <sec/util/string.hpp>
@@ -26,6 +25,7 @@
 #include <iomanip>
 #include <iostream>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -357,7 +357,7 @@ namespace sec::cli
 
 
     // 打印启动横幅
-    auto application::print_banner() const -> void
+    void application::print_banner() const
     {
         std::cout << std::unitbuf;
         std::cout << color_bold << "Spectra v0.1" << color_reset
@@ -367,7 +367,7 @@ namespace sec::cli
 
 
     // 打印帮助信息（交互模式用，含 quit 提示）
-    auto application::print_help() const -> void
+    void application::print_help() const
     {
         std::cout << color_bold << "\nCommands:\n" << color_reset
                   << "  arp <subnet>            ARP scan a subnet (e.g. 192.168.1.0/24)\n"
@@ -387,7 +387,7 @@ namespace sec::cli
 
 
     // 打印用法提示（子命令模式 / 未知命令时用）
-    auto application::print_usage() const -> void
+    void application::print_usage() const
     {
         std::cout << color_bold << "Usage: Spectra <command> [args]\n\n" << color_reset
                   << "Commands:\n"
@@ -991,10 +991,12 @@ namespace sec::cli
             return result;
         }
 
-        // ip/mac 格式化由 sec::decoder::ip_to_string / mac_to_string 提供
-        inline auto ipv4_to_string(std::uint32_t ip) -> std::string
+        auto ipv4_to_string(std::uint32_t ip) -> std::string
         {
-            return sec::decoder::ip_to_string(ip);
+            return std::to_string((ip >> 24) & 0xFF) + "." +
+                   std::to_string((ip >> 16) & 0xFF) + "." +
+                   std::to_string((ip >> 8) & 0xFF) + "." +
+                   std::to_string(ip & 0xFF);
         }
 
         // 通过 GetAdaptersAddresses 查找匹配 IP 的接口 MAC
@@ -1194,9 +1196,17 @@ namespace sec::cli
             return false;
         }
 
-        inline auto mac_to_string(std::span<const std::byte, 6> mac) -> std::string
+        auto mac_to_string(std::span<const std::byte, 6> mac) -> std::string
         {
-            return sec::decoder::mac_to_string(mac);
+            char buf[18]{};
+            std::snprintf(buf, sizeof(buf), "%02X:%02X:%02X:%02X:%02X:%02X",
+                          static_cast<unsigned>(mac[0]),
+                          static_cast<unsigned>(mac[1]),
+                          static_cast<unsigned>(mac[2]),
+                          static_cast<unsigned>(mac[3]),
+                          static_cast<unsigned>(mac[4]),
+                          static_cast<unsigned>(mac[5]));
+            return buf;
         }
 
         void print_pentest_summary(const std::vector<pentest_result> &results,

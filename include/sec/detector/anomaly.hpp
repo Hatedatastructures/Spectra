@@ -12,6 +12,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <deque>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -61,7 +62,7 @@ namespace sec::detector
         /** @brief 最小观测次数，低于此值不检测 */
         std::uint64_t min_observations{10};
         /** @brief 统计窗口时长（秒） */
-        int window_seconds{60};
+        std::uint32_t window_seconds{60};
     };
 
 
@@ -106,11 +107,21 @@ namespace sec::detector
 
         auto check_anomaly(std::uint32_t ip) -> std::optional<alert>;
 
+        auto check_beacon(std::uint32_t src_ip, std::uint32_t dst_ip)
+            -> std::optional<alert>;
+
         void prune_stale_ips();
+
+        struct beacon_track
+        {
+            std::deque<std::chrono::steady_clock::time_point> timestamps;
+            bool alerted{false};
+        };
 
         anomaly_config config_;
         std::unordered_map<std::uint32_t, ip_stats> stats_;
         std::unordered_map<std::uint32_t, std::unordered_map<std::uint32_t, std::chrono::steady_clock::time_point>> destinations_;
+        std::unordered_map<std::uint64_t, beacon_track> beacon_tracks_;
         std::uint64_t observe_counter_{0};
     };
 

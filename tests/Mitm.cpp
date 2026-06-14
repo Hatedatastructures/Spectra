@@ -3,9 +3,9 @@
  * @brief MITM 检测模块测试
  */
 
-#include <sec/mitm/arp_detect.hpp>
-#include <sec/mitm/dns_detect.hpp>
-#include <sec/mitm/tls_detect.hpp>
+#include <sec/mitm/arp.hpp>
+#include <sec/mitm/dns.hpp>
+#include <sec/mitm/tls.hpp>
 #include <sec/decoder/frame.hpp>
 #include <sec/decoder/dns.hpp>
 #include <sec/decoder/tls.hpp>
@@ -358,7 +358,7 @@ static auto TestTlsDetectStripping() -> int
     detector.observe_client_hello(0xC0A80101, 0xC0A80102, tls);
 
     // 非 TLS 响应 -> 告警
-    auto result = detector.check_response(0xC0A80101, 0xC0A80102, false);
+    auto result = detector.check_response(0xC0A80101, 0xC0A80102, sec::mitm::response_protocol::plaintext);
     CHECK(result.has_value());
     CHECK(result->type == sec::mitm::tls_alert_type::stripping);
     CHECK(result->client_ip == 0xC0A80101);
@@ -376,7 +376,7 @@ static auto TestTlsDetectNormalResponse() -> int
     detector.observe_client_hello(0xC0A80101, 0xC0A80102, tls);
 
     // 正常 TLS 响应 -> 无告警
-    auto result = detector.check_response(0xC0A80101, 0xC0A80102, true);
+    auto result = detector.check_response(0xC0A80101, 0xC0A80102, sec::mitm::response_protocol::tls);
     CHECK(!result.has_value());
     return 0;
 }
@@ -386,7 +386,7 @@ static auto TestTlsDetectNoPendingSession() -> int
     sec::mitm::tls_detector detector;
 
     // 没有 ClientHello 记录 -> 无告警
-    auto result = detector.check_response(0xC0A80101, 0xC0A80102, false);
+    auto result = detector.check_response(0xC0A80101, 0xC0A80102, sec::mitm::response_protocol::plaintext);
     CHECK(!result.has_value());
     return 0;
 }

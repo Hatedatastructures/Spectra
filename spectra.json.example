@@ -30,5 +30,12 @@
   },
   "tui": {
     "theme": "auto"
+  },
+  "sandbox": {
+    "vm_name": "Win10-Analyze",
+    "snapshot_name": "clean",
+    "timeout_seconds": 120,
+    "guest_workdir": "C:\\Users\\Public",
+    "vboxmanage_path": ""
   }
 }

@@ -25,7 +25,13 @@ compile_commands.json
 *~
 
 # === Claude Code 本地配置（个人开发工作流）===
-.claude/
+# .claude 下所有内容默认忽略，但 skills 目录本身保留（便于开例外）
+.claude/*
+!.claude/skills
+# skills 下所有子目录默认忽略（多数是 Prism 副本，未项目化）
+.claude/skills/*
+# 例外：enforce-coding 已项目化，入库共享
+!.claude/skills/enforce-coding
 
 # === 运行时数据（含敏感信息）===
 spectra.json

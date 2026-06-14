@@ -1,14 +1,14 @@
 // TUI 应用主类实现 — Windows 原生控制台 + cpp-terminal 仅用于渲染
 
 #include <sec/tui/application.hpp>
-#include <sec/tui/ai_chat.hpp>
-#include <sec/tui/command_registry.hpp>
-#include <sec/tui/components/chat_panel.hpp>
-#include <sec/tui/components/input_bar.hpp>
-#include <sec/tui/components/sidebar.hpp>
-#include <sec/tui/components/status_bar.hpp>
+#include <sec/tui/chat.hpp>
+#include <sec/tui/command.hpp>
+#include <sec/tui/components/chat.hpp>
+#include <sec/tui/components/input.hpp>
+#include <sec/tui/components/side.hpp>
+#include <sec/tui/components/status.hpp>
 #include <sec/tui/layout.hpp>
-#include <sec/tui/terminal_renderer.hpp>
+#include <sec/tui/terminal.hpp>
 #include <sec/tui/theme.hpp>
 #include <sec/store/migration.hpp>
 
@@ -507,7 +507,7 @@ namespace sec::tui
     }
 
 
-    auto application::render_frame() -> void
+    void application::render_frame()
     {
         auto rows = last_rows_;
         auto cols = last_cols_;
@@ -515,7 +515,8 @@ namespace sec::tui
         if (rows < 10 || cols < 20) return;
 
         auto sw = sidebar_->width();
-        auto lay = layout::calculate(rows, cols, sw, sidebar_visible_);
+        auto lay = layout::calculate(rows, cols, sw,
+            sidebar_visible_ ? sidebar_state::visible : sidebar_state::hidden);
 
         try
         {

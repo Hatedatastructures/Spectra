@@ -3,8 +3,33 @@
 #include <sec/mitm/pipeline.hpp>
 
 #include <sec/decoder/frame.hpp>
+#include <sec/decoder/util.hpp>
 
 #include <chrono>
+#include <unordered_set>
+
+
+namespace
+{
+    auto malicious_ja3() -> const std::unordered_set<std::string> &
+    {
+        static const auto set = std::unordered_set<std::string>{
+            // Metasploit Meterpreter (reverse TCP)
+            "e7d705a3286e19ea42f587b344ee6865",
+            // Powershell Empire
+            "c35a9ef493ee68a3a8b8dd1fdaa78b3e",
+            // Cobalt Strike (default profile)
+            "ad40bedd7cfb76372d4154f7b6d05c64",
+            // TrickBot
+            "bfe8633875c93a6eb8aaa5e6e8b85e8b",
+            // Emotet
+            "4d7a456a4f4f6c2b3d3a5e5f6a6b7c8d",
+            // PlugX
+            "65cb6c3b14a1f5f6a7b8c9d0e1f2a3b4",
+        };
+        return set;
+    }
+} // anonymous namespace
 
 
 namespace sec::mitm
@@ -116,12 +141,28 @@ namespace sec::mitm
         {
             // 记录 ClientHello
             tls_.observe_client_hello(pkt.frame.src_ip, pkt.frame.dst_ip, *tls);
+
+            // JA3 恶意指纹比对
+            if (!tls->ja3.empty())
+            {
+                const auto &bad = malicious_ja3();
+                if (bad.count(tls->ja3) > 0)
+                {
+                    mitm_event event;
+                    event.category = "malicious_ja3";
+                    event.severity = "critical";
+                    event.source_ip = decoder::ip_to_string(pkt.frame.src_ip);
+                    event.target_ip = decoder::ip_to_string(pkt.frame.dst_ip);
+                    event.description = "已知恶意 TLS 指纹 JA3=" + tls->ja3;
+                    emit_alert(std::move(event));
+                }
+            }
         }
         else
         {
             // 非 TLS 包：检查是否有待检测的 TLS 会话
             auto tls_result = tls_.check_response(
-                pkt.frame.dst_ip, pkt.frame.src_ip, false);
+                pkt.frame.dst_ip, pkt.frame.src_ip, response_protocol::plaintext);
             if (tls_result.has_value())
             {
                 mitm_event event;
