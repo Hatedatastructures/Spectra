@@ -5,6 +5,7 @@ target_sources(${PROJECT_NAME}_static_library
         ${PROJECT_SOURCE_DIR}/include/sec/tui/tui.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/tui/application.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/tui/chat.hpp
+        ${PROJECT_SOURCE_DIR}/include/sec/tui/agent.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/tui/markdown.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/tui/command.hpp
         ${PROJECT_SOURCE_DIR}/include/sec/tui/components/chat.hpp
@@ -20,6 +21,7 @@ target_sources(${PROJECT_NAME}_static_library
     PRIVATE
         application.cpp
         chat.cpp
+        agent.cpp
         markdown.cpp
         syntax.cpp
         command.cpp

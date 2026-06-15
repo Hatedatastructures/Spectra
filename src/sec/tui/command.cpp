@@ -120,6 +120,7 @@ namespace sec::tui
         register_api();
         register_sandbox();
         register_analyses();
+        register_agent();
     }
 
 
@@ -639,7 +640,9 @@ namespace sec::tui
                 if (sub == "on" || sub == "remote")
                 {
                     app_.chat().set_mode(ai_mode::remote);
-                    return "AI mode set to **remote** (OpenAI / Anthropic API).\n";
+                    app_.chat().enable_agent_mode(app_);
+                    return "AI mode set to **remote** with agent tools enabled.\n"
+                           "AI can now use: scan / probe / devices / alerts / inspect / etc.\n";
                 }
                 if (sub == "off")
                 {
@@ -782,6 +785,40 @@ namespace sec::tui
                        << " | " << r.summary << " |\n";
                 }
                 return ss.str();
+            }
+        });
+    }
+
+
+    void command_registry::register_agent()
+    {
+        entries_.push_back({
+            "agent", "agent [on/off]", "Toggle AI agent mode (tool-use)",
+            [this](const std::vector<std::string> &args) -> std::string
+            {
+                if (args.size() < 2)
+                {
+                    auto enabled = app_.chat().is_generating();
+                    auto ss = std::ostringstream{};
+                    ss << "Agent mode: **" << (enabled ? "ON" : "OFF") << "**\n\n";
+                    ss << "Usage: `agent on` to enable, `agent off` to disable.\n\n";
+                    ss << "Available tools: scan / probe / discover / devices / inspect / ";
+                    ss << "alerts / traffic / analyze / ack / stats\n";
+                    return ss.str();
+                }
+
+                auto sub = args[1];
+                if (sub == "on")
+                {
+                    app_.chat().enable_agent_mode(app_);
+                    return "Agent mode **ON**. AI can now use security tools.\n"
+                           "Try: \"scan my network\" or \"check for threats\"\n";
+                }
+                if (sub == "off")
+                {
+                    return "Agent mode **OFF**. AI operates in normal chat mode.\n";
+                }
+                return "**Unknown:** `" + sub + "`. Use `agent on` or `agent off`.\n";
             }
         });
     }

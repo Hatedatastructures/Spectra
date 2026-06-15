@@ -3,6 +3,8 @@
 // POSIX: 使用 OpenSSL
 
 #include <sec/tui/chat.hpp>
+#include <sec/tui/agent.hpp>
+#include <sec/tui/application.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
@@ -294,6 +296,7 @@ namespace sec::tui
 
         void parse_sse_chunk(const std::string &chunk,
             std::string &sse_buffer, std::string &total_response,
+            std::string &raw_events,
             std::function<void(std::string_view)> &on_chunk,
             std::atomic<bool> &abort_flag, api_protocol protocol)
         {
@@ -321,6 +324,7 @@ namespace sec::tui
                     {
                         auto payload = line.substr(5);
                         while (!payload.empty() && payload.front() == ' ') payload.erase(0, 1);
+                        raw_events += payload + "\n";
                         if (payload == "[DONE]")
                         {
                             abort_flag = true;
@@ -352,6 +356,9 @@ namespace sec::tui
                     {
                         auto payload = line.substr(5);
                         while (!payload.empty() && payload.front() == ' ') payload.erase(0, 1);
+
+                        // 累积原始事件（供 tool_use 提取）
+                        raw_events += payload + "\n";
 
                         // 错误事件：提取 message 字段显示给用户
                         if (last_event == "error" || payload.find("\"type\":\"error\"") != std::string::npos)
@@ -518,17 +525,27 @@ namespace sec::tui
         const std::string &body, const std::string &api_key,
         api_protocol protocol,
         std::function<void(std::string_view)> &on_chunk,
-        std::atomic<bool> &abort_flag) -> std::string
+        std::atomic<bool> &abort_flag,
+        std::string &raw_events) -> std::string
     {
         auto whost = wide(host);
         auto wpath = wide(path);
         auto total = std::string{};
+        raw_events.clear();
 
         auto hInternet = InternetOpenW(L"Spectra/0.1", INTERNET_OPEN_TYPE_DIRECT, nullptr, nullptr, 0);
         if (!hInternet)
         {
             throw std::runtime_error("InternetOpen failed: " + std::to_string(GetLastError()));
         }
+
+        // 设置超时：连接 15s，发送 15s，接收 120s（SSE 流式可能较慢但限流时会卡死）
+        auto connect_timeout = DWORD{15000};
+        auto send_timeout = DWORD{15000};
+        auto recv_timeout = DWORD{120000};
+        InternetSetOptionW(hInternet, INTERNET_OPTION_CONNECT_TIMEOUT, &connect_timeout, sizeof(connect_timeout));
+        InternetSetOptionW(hInternet, INTERNET_OPTION_SEND_TIMEOUT, &send_timeout, sizeof(send_timeout));
+        InternetSetOptionW(hInternet, INTERNET_OPTION_RECEIVE_TIMEOUT, &recv_timeout, sizeof(recv_timeout));
 
         auto hConnect = InternetConnectW(hInternet, whost.c_str(),
             static_cast<INTERNET_PORT>(port), nullptr, nullptr, INTERNET_SERVICE_HTTP, 0, 0);
@@ -606,9 +623,10 @@ namespace sec::tui
             throw std::runtime_error("HTTP " + std::to_string(status_code) + ": " + err_msg);
         }
 
-        // 读取 SSE 流式响应
+        // 读取 SSE 流式响应（带停滞检测：120 秒无数据则超时）
         auto read_buf = std::vector<char>(4096);
         auto sse_buffer = std::string{};
+        auto last_data_time = std::chrono::steady_clock::now();
         while (!abort_flag)
         {
             auto bytes_read = DWORD{0};
@@ -616,10 +634,26 @@ namespace sec::tui
                 static_cast<DWORD>(read_buf.size()), &bytes_read);
             if (!result || bytes_read == 0) break;
 
+            if (bytes_read > 0)
+            {
+                last_data_time = std::chrono::steady_clock::now();
+            }
+
+            // 停滞超时：120 秒无新数据
+            auto stall = std::chrono::duration_cast<std::chrono::seconds>(
+                std::chrono::steady_clock::now() - last_data_time).count();
+            if (stall > 120)
+            {
+                spdlog::warn("AI SSE stalled for {}s, aborting", stall);
+                total += "\n\n**[timeout]** AI 响应超时，请稍后重试。\n";
+                if (on_chunk) on_chunk("\n\n**[timeout]** AI 响应超时，请稍后重试。\n");
+                break;
+            }
+
             auto chunk_str = std::string{read_buf.data(), bytes_read};
             spdlog::debug("AI SSE chunk ({} bytes): {}", bytes_read, chunk_str.substr(0, 200));
 
-            parse_sse_chunk(chunk_str, sse_buffer, total, on_chunk, abort_flag, protocol);
+            parse_sse_chunk(chunk_str, sse_buffer, total, raw_events, on_chunk, abort_flag, protocol);
         }
 
         InternetCloseHandle(hRequest);
@@ -647,12 +681,35 @@ namespace sec::tui
                     remote_cfg_.protocol, remote_cfg_.model, system_prompt_, history_,
                     remote_cfg_.max_tokens, remote_cfg_.temperature);
 
+                if (agent_enabled_ && !tools_json_.empty())
+                {
+                    auto insert_pos = body.rfind('}');
+                    if (insert_pos != std::string::npos)
+                    {
+                        body.insert(insert_pos, ",\"tools\":" + tools_json_);
+                        if (remote_cfg_.protocol == api_protocol::anthropic)
+                        {
+                            body.insert(insert_pos + 9 + tools_json_.size(),
+                                ",\"tool_choice\":{\"type\":\"auto\"}");
+                        }
+                        else
+                        {
+                            body.insert(insert_pos + 9 + tools_json_.size(),
+                                ",\"tool_choice\":\"auto\"");
+                        }
+                    }
+                }
+
                 spdlog::info("AI request body: {}", body);
 
+                auto raw_events = std::string{};
                 auto total = wininet_https_streaming(
                     parsed.host, port, api_path, body,
                     remote_cfg_.api_key, remote_cfg_.protocol,
-                    on_chunk, abort_flag_);
+                    on_chunk, abort_flag_, raw_events);
+
+                spdlog::info("AI response: {} bytes text, {} bytes raw events",
+                    total.size(), raw_events.size());
 
                 {
                     auto lock = std::lock_guard<std::mutex>{history_mutex_};
@@ -660,6 +717,87 @@ namespace sec::tui
                     msg.who = chat_message::role::assistant;
                     msg.content = total;
                     history_.push_back(std::move(msg));
+                }
+
+                // Agent 工具调用循环
+                if (agent_enabled_)
+                {
+                    for (auto round = std::uint32_t{0}; round < max_tool_rounds; ++round)
+                    {
+                        auto calls = extract_tool_calls(remote_cfg_.protocol, raw_events);
+                        if (calls.empty()) break;
+
+                        spdlog::info("Agent round {}: {} tool calls", round, calls.size());
+
+                        if (on_chunk)
+                        {
+                            on_chunk("\n\n---\n\n");
+                        }
+
+                        // 执行工具 + 收集结果
+                        auto tool_results = std::vector<std::pair<std::string, std::string>>{};
+
+                        for (const auto &call : calls)
+                        {
+                            auto it = tool_registry_.find(call.name);
+                            if (it == tool_registry_.end())
+                            {
+                                spdlog::warn("Agent: unknown tool '{}'", call.name);
+                                if (on_chunk) on_chunk("\n> **Unknown tool:** " + call.name + "\n");
+                                continue;
+                            }
+
+                            if (on_chunk)
+                            {
+                                on_chunk("> **[tool] " + call.name + "** " +
+                                    (call.arguments.empty() ? "" : call.arguments) + "\n");
+                            }
+
+                            spdlog::info("Agent executing tool '{}': {}", call.name, call.arguments);
+                            auto result = it->second(call.arguments);
+                            spdlog::info("Agent tool '{}' result ({} bytes)", call.name, result.size());
+
+                            tool_results.emplace_back(call.id, result);
+
+                            {
+                                auto lock = std::lock_guard<std::mutex>{history_mutex_};
+                                auto msg = chat_message{};
+                                msg.who = chat_message::role::user;
+                                msg.content = "[Tool Result: " + call.name + "]\n" + result;
+                                history_.push_back(std::move(msg));
+                            }
+
+                            if (on_chunk)
+                            {
+                                on_chunk("\n**[" + call.name + "]** executed.\n\n");
+                            }
+                        }
+
+                        compress_history();
+
+                        // follow-up: 纯文本消息（不用结构化 tool_result）
+                        // 工具结果已以纯文本追加到 history_，AI 能直接读懂
+                        auto follow_body = build_request_body_by_protocol(
+                            remote_cfg_.protocol, remote_cfg_.model, system_prompt_, history_,
+                            remote_cfg_.max_tokens, remote_cfg_.temperature);
+
+                        spdlog::info("Agent follow-up body: {} bytes", follow_body.size());
+
+
+                        raw_events.clear();
+                        total = wininet_https_streaming(
+                            parsed.host, port, api_path, follow_body,
+                            remote_cfg_.api_key, remote_cfg_.protocol,
+                            on_chunk, abort_flag_, raw_events);
+
+                        {
+                            auto lock = std::lock_guard<std::mutex>{history_mutex_};
+                            auto msg = chat_message{};
+                            msg.who = chat_message::role::assistant;
+                            msg.content = total;
+                            history_.push_back(std::move(msg));
+                        }
+                    }
                 }
             }
             catch (const std::exception &e)
@@ -780,6 +918,27 @@ namespace sec::tui
             },
             asio::detached);
 #endif
+    }
+
+
+    void ai_chat::enable_agent_mode(application &app)
+    {
+        tool_registry_ = build_tool_registry(app);
+        auto defs = build_tool_definitions();
+        tools_json_ = build_tools_json(remote_cfg_.protocol, defs);
+        system_prompt_ = build_security_prompt(app);
+        agent_enabled_ = true;
+        spdlog::info("Agent mode enabled: {} tools registered", defs.size());
+    }
+
+
+    void ai_chat::compress_history()
+    {
+        if (history_.size() > max_history)
+        {
+            history_.erase(history_.begin(),
+                           history_.begin() + (history_.size() - max_history));
+        }
     }
 
 

@@ -66,41 +66,38 @@ auto main(int argc, char *argv[]) -> int
 
         auto cwd = std::filesystem::current_path();
         auto exe_dir = std::filesystem::path{argv[0]}.parent_path();
-        spdlog::info("cwd={}, exe_dir={}", cwd.string(), exe_dir.string());
-
-        // UAC 提权后 CWD 可能变成 C:\Windows\System32，
-        // 所以必须用 exe 绝对路径往上搜索项目根目录
         auto exe_abs = std::filesystem::absolute(exe_dir);
-        auto cfg_paths = std::vector<std::filesystem::path>{
-            cwd / "spectra.json",
-            exe_abs / "spectra.json",
-            exe_abs / ".." / "spectra.json",
-            exe_abs / ".." / ".." / "spectra.json",
-            exe_abs / ".." / ".." / ".." / "spectra.json",
+
+        // 搜索优先级：cwd > exe 相对路径 > 用户目录
+        auto search_paths = std::vector<std::string>{
+            (cwd / "spectra.json").string(),
+            (exe_abs / "spectra.json").string(),
+            (exe_abs / ".." / "spectra.json").string(),
+            (exe_abs / ".." / ".." / "spectra.json").string(),
+            (exe_abs / ".." / ".." / ".." / "spectra.json").string(),
+            sec::user_config_path(),
         };
 
-        auto loaded = false;
-        for (const auto &p : cfg_paths)
+        spdlog::info("cwd={}, exe_dir={}", cwd.string(), exe_abs.string());
+
+        // 1. 先搜索所有路径，找到就读取
+        auto found = sec::find_config(search_paths, cfg);
+
+        // 2. 全部未找到 → 在用户目录创建默认配置并加载
+        if (found.empty())
         {
-            try
+            spdlog::warn("No spectra.json found, creating default at ~/.spectra/");
+            auto created = sec::ensure_default_config();
+            if (!created.empty())
             {
-                if (std::filesystem::exists(p))
-                {
-                    cfg = sec::load_config(p.string());
-                    spdlog::info("Loaded config from: {}", p.string());
-                    loaded = true;
-                    break;
-                }
-            }
-            catch (const std::exception &e)
-            {
-                spdlog::warn("Failed to parse config {}: {}", p.string(), e.what());
+                cfg = sec::load_config(created);
+                found = created;
             }
         }
 
-        if (!loaded)
+        if (found.empty())
         {
-            spdlog::warn("No spectra.json found, using defaults");
+            spdlog::warn("No spectra.json found, using built-in defaults");
         }
 
         if (use_cli)

@@ -71,6 +71,7 @@ namespace sec::tui
         void register_api();
         void register_sandbox();
         void register_analyses();
+        void register_agent();
 
         application &app_;
         std::vector<command_entry> entries_;

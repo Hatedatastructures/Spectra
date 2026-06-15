@@ -125,6 +125,27 @@ namespace sec
      */
     void save_config(const config &cfg, const std::string &path);
 
+    /**
+     * @brief 搜索配置文件，按优先级依次尝试多个路径
+     * @param search_paths 搜索路径列表（按优先级排序）
+     * @param cfg 找到时写入配置对象
+     * @return 找到的配置文件路径（空表示全部未找到）
+     */
+    [[nodiscard]] auto find_config(const std::vector<std::string> &search_paths,
+                                    config &cfg) -> std::string;
+
+    /**
+     * @brief 获取用户目录下的固定配置路径
+     * @return ~/.spectra/spectra.json 完整路径
+     */
+    [[nodiscard]] auto user_config_path() -> std::string;
+
+    /**
+     * @brief 在用户目录创建默认配置文件（仅当不存在时）
+     * @return 创建的路径（已存在返回原路径，失败返回空）
+     */
+    [[nodiscard]] auto ensure_default_config() -> std::string;
+
 } // namespace sec
 
 template <>

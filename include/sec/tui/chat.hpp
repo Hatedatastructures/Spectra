@@ -15,6 +15,7 @@
 #include <optional>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 namespace sec::tui
@@ -96,15 +97,31 @@ namespace sec::tui
         void set_system_prompt(std::string prompt);
         [[nodiscard]] auto is_generating() const noexcept -> bool;
 
+        /**
+         * @brief 启用 agent 模式（工具调用 + 安全提示词）
+         */
+        void enable_agent_mode(class application &app);
+
     private:
         void do_remote_request(const std::string &text,
                                 std::function<void(std::string_view)> on_chunk,
                                 std::function<void()> on_done);
 
+        void compress_history();
+
         remote_config remote_cfg_;
         ai_mode mode_{ai_mode::off};
         std::string system_prompt_;
         std::vector<chat_message> history_;
+
+        // Agent 工具
+        bool agent_enabled_{false};
+        std::string tools_json_;
+        std::unordered_map<std::string, std::function<std::string(const std::string &)>> tool_registry_;
+
+        // 上下文管理
+        static constexpr std::size_t max_history{12};
+        static constexpr std::uint32_t max_tool_rounds{8};
 
         boost::asio::io_context remote_ioc_;
         std::optional<boost::asio::executor_work_guard<

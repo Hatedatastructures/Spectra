@@ -95,7 +95,8 @@ namespace sec::tui
                 ? api_protocol::anthropic : api_protocol::openai;
             chat_->set_remote(rc);
             chat_->set_mode(ai_mode::remote);
-            spdlog::info("AI mode set to REMOTE");
+            chat_->enable_agent_mode(*this);
+            spdlog::info("AI mode set to REMOTE with agent tools");
         }
         else
         {
